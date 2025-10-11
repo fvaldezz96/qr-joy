@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { login, register } from './auth.controller';
+import { me, listUsers } from './users.controller';
+import { requireAuth, requireAdmin } from '../../middlewares/requireAuth';
+const r = Router();
+r.post('/register', register);
+r.post('/login', login);
+r.get('/me', requireAuth, me);
+r.get('/', requireAdmin, listUsers);
+export default r;
