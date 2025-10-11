@@ -1,22 +1,21 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 import morgan from 'morgan';
-import userAuthRoutes from './modules/users/user.routes';
-import usersRoutes from './modules/users/users.routes';
-import productRoutes from './modules/products/product.routes';
+
 import stockRoutes from './modules/inventory/stock.routes';
 import orderRoutes from './modules/orders/order.routes';
-import ticketRoutes from './modules/tickets/ticket.routes';
+import productRoutes from './modules/products/product.routes';
 import qrRoutes from './modules/qr/qr.routes';
-import tableRoutes from './modules/tables/table.routes';
 import comandaRoutes from './modules/tables/comanda.routes';
-
+import tableRoutes from './modules/tables/table.route';
+import ticketRoutes from './modules/tickets/ticket.routes';
+import userAuthRoutes from './modules/users/user.routes';
+import usersRoutes from './modules/users/user.routes';
 
 export const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
-
 
 app.use('/auth', userAuthRoutes);
 app.use('/users', usersRoutes);
@@ -28,9 +27,11 @@ app.use('/qr', qrRoutes);
 app.use('/tables', tableRoutes);
 app.use('/comandas', comandaRoutes);
 
-
 // error handler
 app.use((err: any, _req: any, res: any, _next: any) => {
-console.error(err);
-res.status(err.status || 500).json({ ok:false, error:{ code: err.code || 'INTERNAL', message: err.message || 'Internal Error' } });
+  console.error(err);
+  res.status(err.status || 500).json({
+    ok: false,
+    error: { code: err.code || 'INTERNAL', message: err.message || 'Internal Error' },
+  });
 });

@@ -1,14 +1,46 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { asyncHandler } from '../../utils/asyncHandler';
+
 import { ok } from '../../core/http';
-import TableModel from './table.model';
+import { asyncHandler } from '../../utils/asyncHandler';
+import { Table } from './table.model';
 
-
-const UpsertTable = z.object({ name: z.string().min(1), capacity: z.number().int().positive(), active: z.boolean().default(true) });
-export const listTables = asyncHandler(async (_req: Request, res: Response) => {
-const items = await TableModel.find({}).lean(); res.json(ok(items));
+const UpsertTable = z.object({
+  name: z.string().min(1),
+  capacity: z.number().int().positive(),
+  active: z.boolean().default(true),
 });
+
+// 🔹 Listar mesas
+export const listTables = asyncHandler(async (_req: Request, res: Response) => {
+  const items = await Table.find({}).lean();
+  res.json(ok(items));
+});
+
+// 🔹 Crear mesa
 export const createTable = asyncHandler(async (req: Request, res: Response) => {
-const doc = await TableModel.create(UpsertTable.parse(req.body)); res.json(ok(doc));
+  const data = UpsertTable.parse(req.body);
+  const doc = await Table.create(data);
+  res.json(ok(doc));
+});
+
+// 🔹 Actualizar mesa
+export const updateTable = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const data = UpsertTable.partial().parse(req.body);
+
+  const updated = await Table.findByIdAndUpdate(id, data, { new: true });
+  if (!updated) return res.status(404).json({ error: 'Mesa no encontrada' });
+
+  res.json(ok(updated));
+});
+
+// 🔹 Eliminar (o desactivar) mesa
+export const deleteTable = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const deleted = await Table.findByIdAndDelete(id);
+  if (!deleted) return res.status(404).json({ error: 'Mesa no encontrada' });
+
+  res.json(ok({ message: 'Mesa eliminada correctamente', id }));
 });

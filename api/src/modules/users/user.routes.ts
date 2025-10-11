@@ -1,7 +1,8 @@
 import { Router } from 'express';
+
+import { requireAdmin, requireAuth } from '../../middlewares/requireAuth';
 import { login, register } from './auth.controller';
-import { me, listUsers } from './users.controller';
-import { requireAuth, requireAdmin } from '../../middlewares/requireAuth';
+import { listUsers, me } from './users.controller';
 const r = Router();
 r.post('/register', register);
 r.post('/login', login);
