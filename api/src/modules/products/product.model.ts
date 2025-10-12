@@ -7,7 +7,9 @@ export interface IProduct extends Document {
   category: ProductCategory;
   price: number;
   imageUrl?: string;
+  sku: string;
   active: boolean;
+  _id: string;
 }
 
 const ProductSchema = new Schema<IProduct>(
@@ -16,6 +18,7 @@ const ProductSchema = new Schema<IProduct>(
     category: { type: String, enum: ['drink', 'food', 'ticket'], required: true, index: true },
     price: { type: Number, required: true, min: 0 },
     imageUrl: String,
+    sku: { type: String, sparse: true, index: true },
     active: { type: Boolean, default: true, index: true },
   },
   { timestamps: true },

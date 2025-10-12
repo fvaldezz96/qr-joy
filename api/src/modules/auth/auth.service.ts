@@ -7,7 +7,7 @@ const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const JWT_EXPIRES_IN = '7d';
 
-export type SignPayload = { _id: string; role: 'user' | 'admin'; email: string };
+export type SignPayload = { _id: string; role: 'user' | 'admin' | 'employee'; email: string };
 
 export async function hashPassword(plain: string) {
   return bcrypt.hash(plain, SALT_ROUNDS);
@@ -24,7 +24,7 @@ export function signToken(payload: SignPayload) {
 export async function createUser(opts: {
   email: string;
   password: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'employee';
   name?: string;
 }) {
   const exists = await User.findOne({ email: opts.email });

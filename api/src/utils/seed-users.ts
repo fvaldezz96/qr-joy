@@ -5,8 +5,9 @@ import { User } from '../modules/users/user.model';
 async function run() {
   await connectMongo();
 
-  const emailAdmin = 'admin@joypark.local';
-  const emailUser = 'user@joypark.local';
+  const emailAdmin = 'admin@gmail.com';
+  const emailUser = 'user@gmail.com';
+  const emailEmployee = 'dazz.studio.25@gmail.com';
 
   const existsAdmin = await User.findOne({ email: emailAdmin });
   if (!existsAdmin) {
@@ -22,6 +23,18 @@ async function run() {
     console.log('✅ Usuario creado:', emailUser, '/ pass: User123!');
   } else {
     console.log('ℹ️ Usuario ya existía');
+  }
+
+  if (!emailEmployee) {
+    await createUser({
+      email: emailEmployee,
+      password: 'Admin123!',
+      role: 'employee',
+      name: 'Employee',
+    });
+    console.log('✅ Employee creado:', emailEmployee, '/ pass: Employee123!');
+  } else {
+    console.log('ℹ️ Employee ya existía');
   }
 
   process.exit(0);

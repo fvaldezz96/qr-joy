@@ -9,7 +9,7 @@ import { createUser, loginUser } from './auth.service';
 const RegisterDto = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['user', 'admin']).optional(),
+  role: z.enum(['user', 'admin', 'employee']).optional(),
   name: z.string().min(1).optional(),
 });
 

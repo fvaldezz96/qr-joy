@@ -10,7 +10,7 @@ import { User } from './user.model';
 const RegisterDto = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['user', 'admin']).optional().default('user'),
+  role: z.enum(['user', 'admin', 'employee']).optional().default('user'),
 });
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
