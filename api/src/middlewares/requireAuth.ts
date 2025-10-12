@@ -7,15 +7,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
 export type AuthedUser = {
   _id: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'employee';
   email: string;
 };
 
-// 🔹 Sintaxis moderna sin namespace
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: AuthedUser;
-  }
+export interface AuthedRequest extends Request {
+  user?: AuthedUser;
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {

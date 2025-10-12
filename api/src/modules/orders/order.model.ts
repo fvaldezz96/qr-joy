@@ -1,4 +1,4 @@
-import { Document, model, Schema, Types } from 'mongoose';
+import mongoose, { Document, model, Schema, Types } from 'mongoose';
 
 export type OrderStatus = 'pending' | 'paid' | 'ready' | 'served' | 'cancelled';
 export type OrderType = 'bar' | 'restaurant';
@@ -11,6 +11,7 @@ export interface IOrderItem {
 }
 
 export interface IOrder extends Document {
+  _id: string | mongoose.Types.ObjectId;
   userId?: Types.ObjectId;
   tableId?: Types.ObjectId;
   type: OrderType;

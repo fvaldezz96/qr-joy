@@ -19,9 +19,18 @@ export const listTables = asyncHandler(async (_req: Request, res: Response) => {
 
 // 🔹 Crear mesa
 export const createTable = asyncHandler(async (req: Request, res: Response) => {
-  const data = UpsertTable.parse(req.body);
-  const doc = await Table.create(data);
-  res.json(ok(doc));
+  const data = req.body;
+  // console.log(data);
+  try {
+    const doc = await Table.create(data);
+    if (!doc) throw new Error('TABLE_NOT_CREATED');
+    res.json(ok(doc));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(400)
+      .json({ error: 'Error al crear la mesa. Verifica los datos e intenta nuevamente.' });
+  }
 });
 
 // 🔹 Actualizar mesa

@@ -12,7 +12,7 @@ const CreateTicketDto = z.object({ eventDate: z.coerce.date(), price: z.number()
 export const createTicket = asyncHandler(async (req: AuthedRequest, res: Response) => {
   const { eventDate, price } = CreateTicketDto.parse(req.body);
   const ticket = await Ticket.create({
-    userId: req.user!.id,
+    userId: req.user!._id,
     eventDate,
     price,
     status: 'issued',
@@ -46,6 +46,6 @@ export const payMockTicket = asyncHandler(async (req: AuthedRequest, res: Respon
 });
 
 export const myTickets = asyncHandler(async (req: AuthedRequest, res: Response) => {
-  const items = await Ticket.find({ userId: req.user!.id }).sort({ createdAt: -1 }).lean();
+  const items = await Ticket.find({ userId: req.user!._id }).sort({ createdAt: -1 }).lean();
   res.json(ok(items));
 });

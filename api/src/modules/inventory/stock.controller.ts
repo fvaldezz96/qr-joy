@@ -9,7 +9,7 @@ import { ensureStockForProduct } from './stock.service';
 
 const AdjustDto = z.object({
   location: z.enum(['bar', 'restaurant', 'door']),
-  delta: z.number().int(), // puede ser negativo o positivo
+  delta: z.number().int(),
   // opcional: forzar set absoluto
   set: z.number().int().optional(),
 });

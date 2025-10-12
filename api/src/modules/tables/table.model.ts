@@ -9,8 +9,8 @@ export interface ITable extends Document {
 
 const TableSchema = new Schema<ITable>(
   {
-    number: { type: Number, required: true, unique: true, index: true },
-    name: String,
+    number: { type: Number, required: true, unique: true },
+    name: { type: String, required: false, unique: true },
     capacity: { type: Number, required: false, min: 1, max: 20 },
     active: { type: Boolean, default: true },
   },

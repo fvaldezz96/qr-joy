@@ -15,7 +15,11 @@ function hmac(code: string) {
   return crypto.createHmac('sha256', secret).update(code).digest('hex');
 }
 
-export async function issueQR(kind: QRKind, refId: Types.ObjectId, session?: ClientSession) {
+export async function issueQR(
+  kind: QRKind,
+  refId: Types.ObjectId | string,
+  session?: ClientSession,
+) {
   const code = Math.random().toString(36).slice(2, 14);
   const signature = hmac(code);
   const expiresAt = ttlMinutes ? new Date(Date.now() + ttlMinutes * 60 * 1000) : undefined;
