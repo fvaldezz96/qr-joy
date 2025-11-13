@@ -176,3 +176,6 @@ test-results/
 .eslintcache
 .prettiercache
 >>>>>>> 97503de76b7316756bd22edbf005e6deec43e21c
+.expo/
+.expo-shared/
+dist/

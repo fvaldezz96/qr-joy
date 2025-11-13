@@ -1,1 +1,4 @@
-{"build":{"builder":"paketo","buildCommand":"npm run build"},"start":{"command":"npm start"}}
+{
+  "build": { "builder": "paketo", "buildCommand": "npm run build" },
+  "start": { "command": "expo start --web" }
+}
