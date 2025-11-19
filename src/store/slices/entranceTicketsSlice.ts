@@ -75,7 +75,7 @@ export const fetchUserTickets = createAsyncThunk<
     }
 
     const { data } = await axios.get(
-      `https://qrjoy-api-production.up.railway.app/entrance-tickets/my-tickets`,
+      `http://192.168.0.12:3000/entrance-tickets/my-tickets`,
       {
         headers: {
           'x-user-id': userId,
@@ -100,7 +100,7 @@ export const purchaseTickets = createAsyncThunk<
   { ticketType: TicketType; quantity: number; userId: string }
 >('entranceTickets/purchase', async ({ ticketType, quantity, userId }) => {
   const { data } = await axios.post(
-    `https://qrjoy-api-production.up.railway.app/entrance-tickets/purchase`,
+    `http://192.168.0.12:3000/entrance-tickets/purchase`,
     { ticketType, quantity },
     {
       headers: { 'x-user-id': userId },

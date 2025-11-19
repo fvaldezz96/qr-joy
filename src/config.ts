@@ -1,6 +1,6 @@
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') ||
-  'https://qrjoy-api-production.up.railway.app';
+  'http://192.168.0.12:3000';
 
 export const APP_NAME = 'JoyPark';
 export const APP_VERSION = '1.0.0';
@@ -75,6 +75,7 @@ export const ENDPOINTS = {
   qr: {
     base: join(API_BASE_URL, '/qr'),
     info: (qrIdOrCode: string) => join(API_BASE_URL, `/qr/${qrIdOrCode}`),
+    byUser: (userId: string) => join(API_BASE_URL, `/qr/user/${userId}`),
   },
 
   scan: {

@@ -1,4 +1,3 @@
-// app/(admin)/qr-scanner.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { type BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
@@ -10,6 +9,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -18,8 +18,9 @@ import {
 import { useAppDispatch } from '../../src/hook';
 import { redeemQr } from '../../src/store/slices/adminSlice';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const SCAN_AREA_SIZE = Math.min(width * 0.7, 280);
+const isWeb = Platform.OS === 'web';
 
 export default function QrScanner() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -27,16 +28,13 @@ export default function QrScanner() {
   const [status, setStatus] = useState<'idle' | 'scanning' | 'success' | 'error'>('idle');
   const dispatch = useAppDispatch();
 
-  // Animaciones
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  // Sonidos
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   useEffect(() => {
-    // Iniciar escaneo láser
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(scanLineAnim, {
@@ -61,12 +59,11 @@ export default function QrScanner() {
     if (!permission.granted) requestPermission();
   }, [permission]);
 
-  // Reproducir sonido
   const playSound = async (type: 'success' | 'error') => {
     try {
       const { sound } = await Audio.Sound.createAsync(
         type === 'success'
-          ? require('../../assets/success.mp3') // Agrega un sonido
+          ? require('../../assets/success.mp3')
           : require('../../assets/error.mp3'),
       );
       setSound(sound);
@@ -76,7 +73,6 @@ export default function QrScanner() {
     }
   };
 
-  // Efecto háptico
   const vibrate = (type: 'success' | 'error') => {
     if (Platform.OS === 'ios') {
       Haptics.notificationAsync(
@@ -89,19 +85,16 @@ export default function QrScanner() {
     }
   };
 
-  // Animación de resultado
   const triggerResult = (type: 'success' | 'error') => {
     setStatus(type);
     vibrate(type);
     playSound(type);
 
-    // Glow
     Animated.sequence([
       Animated.timing(glowAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
       Animated.timing(glowAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
     ]).start();
 
-    // Pulso
     Animated.sequence([
       Animated.spring(scaleAnim, { toValue: 1.1, friction: 4, useNativeDriver: true }),
       Animated.spring(scaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }),
@@ -127,6 +120,18 @@ export default function QrScanner() {
     }
   };
 
+  if (isWeb) {
+    return (
+      <LinearGradient colors={['#0F0E17', '#1A0B2E']} style={styles.center}>
+        <Ionicons name="desktop-outline" size={70} color="#FAD02C" />
+        <Text style={styles.permissionTitle}>Disponible solo en la app móvil</Text>
+        <Text style={styles.permissionText}>
+          El escáner QR requiere acceso directo a la cámara nativa.
+        </Text>
+      </LinearGradient>
+    );
+  }
+
   if (!permission) {
     return (
       <LinearGradient colors={['#0F0E17', '#1A0B2E']} style={styles.center}>
@@ -140,7 +145,7 @@ export default function QrScanner() {
     return (
       <LinearGradient colors={['#0F0E17', '#1A0B2E']} style={styles.center}>
         <View style={styles.permissionBox}>
-          <Ionicons name="camera-off" size={60} color="#E53170" />
+          <Ionicons name="videocam-off" size={60} color="#E53170" />
           <Text style={styles.permissionTitle}>Permiso de Cámara Requerido</Text>
           <Text style={styles.permissionText}>Escanea QR para validar entradas</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
@@ -162,23 +167,19 @@ export default function QrScanner() {
         onBarcodeScanned={onScan}
       />
 
-      {/* Overlay */}
       <View style={styles.overlay}>
-        {/* Header */}
         <View style={styles.header}>
           <Ionicons name="scan" size={32} color="#FAD02C" />
           <Text style={styles.title}>Escáner QR</Text>
           <Text style={styles.subtitle}>Apunta al código de entrada</Text>
         </View>
 
-        {/* Área de escaneo */}
         <View style={styles.scanArea}>
           <View style={styles.cornerTL} />
           <View style={styles.cornerTR} />
           <View style={styles.cornerBL} />
           <View style={styles.cornerBR} />
 
-          {/* Línea láser animada */}
           <Animated.View
             style={[
               styles.scanLine,
@@ -195,7 +196,6 @@ export default function QrScanner() {
             ]}
           />
 
-          {/* Glow de resultado */}
           <Animated.View
             style={[
               styles.resultGlow,
@@ -208,7 +208,6 @@ export default function QrScanner() {
           />
         </View>
 
-        {/* Estado */}
         <View style={styles.statusContainer}>
           {status === 'idle' && <Text style={styles.statusText}>Listo para escanear</Text>}
           {status === 'scanning' && <Text style={styles.statusText}>Validando...</Text>}
@@ -224,7 +223,6 @@ export default function QrScanner() {
   );
 }
 
-// === ESTILOS ===
 const styles = {
   container: { flex: 1 },
   camera: { flex: 1 },

@@ -15,47 +15,38 @@ import {
 import QRCode from 'react-native-qrcode-svg';
 
 import { useAppDispatch, useAppSelector } from '../../src/hook';
-import { getAllOrders } from '../../src/store/slices/ordersSlice';
+import { fetchUserQrs } from '../../src/store/slices/qrsSlice';
 
 export default function QRScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useLocalSearchParams<{ png?: string; code?: string; signature?: string }>();
 
-  // === AUTH & USER ===
   const { user, loading: authLoading } = useAppSelector((s) => s.auth);
   const userId = user?._id;
-  const isUser = user?.role === 'user' || 'admin';
+  const isUser = user?.role === 'user' || user?.role === 'admin';
 
-  // === ORDERS STATE ===
-  const { orders, loadingOrders } = useAppSelector((s) => s.orders);
+  const { items: userQrs, loading: qrsLoading } = useAppSelector((s) => s.qrs);
+  // console.log('user qrs : ', userQrs);
 
   const [step, setStep] = useState<'cart' | 'qr'>('cart');
 
-  // === TRAER ÓRDENES AL CARGAR ===
   useEffect(() => {
-    dispatch(getAllOrders());
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchUserQrs(userId));
+    }
+  }, [dispatch, userId]);
 
-  // === FILTRAR ÓRDENES DEL USUARIO (pagadas + misma mesa) ===
-  const userPaidOrders = orders.filter((o) => {
-    const isPaid = o.status === 'paid' || !!o.qrId;
-    const belongsToUser = o.userId === userId;
-    return isPaid && belongsToUser;
-  });
+  const latestUserQr = userQrs[0];
+  const code = params.code || latestUserQr?.qr.code;
+  const signature = params.signature || latestUserQr?.qr.signature;
+  const headlineTable = latestUserQr?.tableId || '—';
 
-  // === QR PRINCIPAL (última orden pagada) ===
-  const latestOrder = userPaidOrders[0];
-  const png = params.png || latestOrder?.qr?.pngDataUrl;
-  const code = params.code || latestOrder?.qr?.code;
-  const signature = params.signature || latestOrder?.qr?.signature;
-
-  // === ANIMACIONES ===
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (png) {
+    if (code) {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.06, duration: 1600, useNativeDriver: true }),
@@ -64,7 +55,7 @@ export default function QRScreen() {
       );
       pulse.start();
     }
-  }, [png]);
+  }, [code, pulseAnim]);
 
   const handleHoverIn = () => {
     if (Platform.OS === 'web') {
@@ -120,141 +111,157 @@ export default function QRScreen() {
     );
   }
 
-  if (loadingOrders) {
+  if (qrsLoading) {
     return (
       <LinearGradient colors={['#0F0E17', '#1A0B2E']} style={styles.loading}>
         <ActivityIndicator size="large" color="#00FFAA" />
-        <Text style={styles.loadingText}>Cargando tus órdenes...</Text>
+        <Text style={styles.loadingText}>Cargando tus QR...</Text>
       </LinearGradient>
     );
   }
 
+  const listHeader = (
+    <View>
+      <TouchableOpacity style={styles.backButton} onPress={goBack}>
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.headerGlass}>
+        <Ionicons name="qr-code" size={34} color="#00FFAA" />
+        <Text style={styles.title}>Historial de Órdenes</Text>
+        <Text style={styles.subtitle}>Mesa {headlineTable}</Text>
+      </View>
+{/* 
+      {code && (
+        <Animated.View
+          style={[
+            styles.qrMainWrapper,
+            { transform: [{ scale: scaleAnim }, { scale: pulseAnim }] },
+          ]}
+          onMouseEnter={handleHoverIn}
+          onMouseLeave={handleHoverOut}
+        >
+          <LinearGradient colors={['#00FFAA20', '#00AEEF30']} style={styles.qrMainGradient}>
+            <View style={styles.qrMainInner}>
+              <View style={styles.qrGlow} />
+              <QRCode value={code || 'sin_codigo'} size={240} />
+            </View>
+            <View style={styles.qrInfo}>
+              <Text style={styles.qrCode}>Código: {code?.slice(0, 16)}...</Text>
+              <Text style={styles.qrSig}>Firma: {signature?.slice(0, 16)}...</Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+      )} */}
+    </View>
+  );
+
   return (
     <LinearGradient colors={['#0F0E17', '#1A0B2E', '#2A0B3A']} style={styles.gradientBg}>
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={goBack}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
+      <FlatList
+        data={userQrs}
+        keyExtractor={(item) => item.qr.id || item.orderId}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={listHeader}
+        ListHeaderComponentStyle={{ paddingBottom: 12 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="document-outline" size={56} color="#555" />
+            <Text style={styles.emptyText}>Todavía no generaste QR</Text>
+            <Text style={styles.emptySub}>Completá un pedido para verlos acá</Text>
+          </View>
+        }
+        renderItem={({ item }) => {
+          const qrData = JSON.stringify({
+            orderId: item.orderId,
+            c: item.qr.code,
+            s: item.qr.signature,
+          });
 
-        {/* HEADER PREMIUM */}
-        <View style={styles.headerGlass}>
-          <Ionicons name="qr-code" size={34} color="#00FFAA" />
-          <Text style={styles.title}>Tus QR de Acceso</Text>
-          <Text style={styles.subtitle}>Mesa {latestOrder?.tableId || '—'}</Text>
-        </View>
-
-        {/* QR PRINCIPAL (última orden) */}
-        {png && (
-          <Animated.View
-            style={[
-              styles.qrMainWrapper,
-              { transform: [{ scale: scaleAnim }, { scale: pulseAnim }] },
-            ]}
-            onMouseEnter={handleHoverIn}
-            onMouseLeave={handleHoverOut}
-          >
-            <LinearGradient colors={['#00FFAA20', '#00AEEF30']} style={styles.qrMainGradient}>
-              <View style={styles.qrMainInner}>
-                <View style={styles.qrGlow} />
-                <QRCode value={code || 'sin_codigo'} size={240} />
-              </View>
-              <View style={styles.qrInfo}>
-                <Text style={styles.qrCode}>Código: {code?.slice(0, 16)}...</Text>
-                <Text style={styles.qrSig}>Firma: {signature?.slice(0, 16)}...</Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        )}
-
-        {/* LISTA DE ÓRDENES */}
-        <Text style={styles.sectionTitle}>Historial de Órdenes</Text>
-
-        <FlatList
-          data={userPaidOrders}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="document-outline" size={56} color="#555" />
-              <Text style={styles.emptyText}>No hay órdenes pagadas</Text>
-              <Text style={styles.emptySub}>¡Hacé tu primer pedido!</Text>
-            </View>
-          }
-          renderItem={({ item }) => {
-            const qrData = JSON.stringify({
-              orderId: item._id,
-              total: item.total,
-              tableId: item.tableId,
-              createdAt: item.createdAt,
-              status: item.status,
-            });
-
-            return (
-              <View style={styles.orderCardWrapper}>
-                <ImageBackground
-                  source={{ uri: 'https://i.imgur.com/8x5T7fJ.png' }}
-                  imageStyle={styles.orderBgImage}
-                  style={styles.orderBg}
+          return (
+            <View style={styles.orderCardWrapper}>
+              <ImageBackground
+                source={{ uri: 'https://i.imgur.com/8x5T7fJ.png' }}
+                imageStyle={styles.orderBgImage}
+                style={styles.orderBg}
+              >
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.05)']}
+                  style={styles.orderOverlay}
                 >
-                  <LinearGradient
-                    colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.05)']}
-                    style={styles.orderOverlay}
-                  >
-                    <View style={styles.orderHeader}>
-                      <Ionicons name="receipt" size={26} color="#FAD02C" />
-                      <Text style={styles.orderId}>#{item._id.slice(-6).toUpperCase()}</Text>
+                  <View style={styles.orderHeader}>
+                    <Ionicons name="receipt" size={26} color="#FAD02C" />
+                    <Text style={styles.orderId}>#{item.orderId.slice(-6).toUpperCase()}</Text>
+                    <View
+                      style={[
+                        styles.statePill,
+                        item.qr.state === 'redeemed' ? styles.statePillRedeemed : styles.statePillActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statePillText,
+                          item.qr.state === 'redeemed' && styles.statePillTextRedeemed,
+                        ]}
+                      >
+                        {item.qr.state === 'redeemed' ? 'Usado' : 'Disponible'}
+                      </Text>
                     </View>
+                  </View>
 
-                    <View style={styles.orderInfo}>
-                      <View style={styles.infoRow}>
-                        <Ionicons name="cash" size={16} color="#E53170" />
-                        <Text style={styles.infoText}>${item.total.toLocaleString()}</Text>
-                      </View>
-                      <View style={styles.infoRow}>
-                        <Ionicons name="location" size={16} color="#00AEEF" />
-                        <Text style={styles.infoText}>Mesa {item.tableId}</Text>
-                      </View>
-                      <View style={styles.infoRow}>
-                        <Ionicons name="time" size={16} color="#A7A9BE" />
-                        <Text style={styles.infoText}>
-                          {new Date(item.createdAt!).toLocaleDateString('es-AR', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                          })}
-                        </Text>
-                      </View>
+                  <View style={styles.orderInfo}>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="cash" size={16} color="#E53170" />
+                      <Text style={styles.infoText}>${item.total.toLocaleString()}</Text>
                     </View>
-
-                    <View style={styles.qrMiniSection}>
-                      <View style={styles.qrMiniContainer}>
-                        <QRCode value={qrData} size={110} />
-                      </View>
-                      <Text style={styles.qrReady}>QR Listo</Text>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="location" size={16} color="#00AEEF" />
+                      <Text style={styles.infoText}>Mesa {item.tableId || '—'}</Text>
                     </View>
-                  </LinearGradient>
-                </ImageBackground>
-              </View>
-            );
-          }}
-        />
+                    <View style={styles.infoRow}>
+                      <Ionicons name="time" size={16} color="#A7A9BE" />
+                      <Text style={styles.infoText}>
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleDateString('es-AR', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'short',
+                            })
+                          : '—'}
+                      </Text>
+                    </View>
+                  </View>
 
-        {/* BOTÓN VOLVER */}
-        <Animated.View style={{ transform: [{ scale: bounceAnim }], marginTop: 20 }}>
-          <TouchableOpacity
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            onPress={() => router.replace('/')}
-            style={styles.homeButton}
-          >
-            <LinearGradient colors={['#FAD02C', '#FF6B9D']} style={styles.homeButtonGradient}>
-              <Ionicons name="home" size={20} color="#000" />
-              <Text style={styles.homeButtonText}>Volver al Inicio</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+                  <View style={styles.qrMiniSection}>
+                    <View style={styles.qrMiniContainer}>
+                      <QRCode value={qrData} size={110} />
+                    </View>
+                    <Text style={styles.qrReady}>
+                      {item.qr.state === 'redeemed' ? 'QR usado' : 'QR activo'}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </ImageBackground>
+            </View>
+          );
+        }}
+        ListFooterComponent={
+          <Animated.View style={{ transform: [{ scale: bounceAnim }], marginTop: 20 }}>
+            <TouchableOpacity
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              onPress={() => router.replace('/')}
+              style={styles.homeButton}
+            >
+              <LinearGradient colors={['#FAD02C', '#FF6B9D']} style={styles.homeButtonGradient}>
+                <Ionicons name="home" size={20} color="#000" />
+                <Text style={styles.homeButtonText}>Volver al Inicio</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        }
+      />
     </LinearGradient>
   );
 }
@@ -359,7 +366,7 @@ const styles = {
     textShadowRadius: 10,
   },
 
-  list: { paddingBottom: 40 },
+  list: { padding: 20, paddingBottom: 60 },
   empty: { alignItems: 'center', marginTop: 50, padding: 30 },
   emptyText: { fontSize: 18, color: '#888', marginTop: 14, fontWeight: '600' },
   emptySub: { fontSize: 14, color: '#666', marginTop: 6 },
@@ -378,6 +385,25 @@ const styles = {
   orderOverlay: { padding: 20 },
   orderHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   orderId: { fontSize: 18, fontWeight: '900', color: '#FAD02C', letterSpacing: 1.5 },
+  statePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginLeft: 'auto',
+    borderWidth: 1,
+  },
+  statePillActive: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderColor: 'rgba(16,185,129,0.4)',
+  },
+  statePillRedeemed: {
+    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderColor: 'rgba(239,68,68,0.4)',
+  },
+  statePillText: { fontSize: 13, fontWeight: '700', color: '#10B981', textTransform: 'uppercase' },
+  statePillTextRedeemed: { color: '#EF4444' },
 
   orderInfo: {
     backgroundColor: 'rgba(255,255,255,0.12)',

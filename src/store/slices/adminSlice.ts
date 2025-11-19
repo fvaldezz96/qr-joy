@@ -32,6 +32,14 @@ export const fetchMetrics = createAsyncThunk('admin/fetchMetrics', async () => {
   return data.data as AdminMetrics;
 });
 
+export const redeemQr = createAsyncThunk(
+  'admin/redeemQr',
+  async ({ code, signature }: { code: string; signature: string }) => {
+    const { data } = await axios.post(`${API_BASE_URL}/qr/redeem`, { code, signature });
+    return data;
+  },
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {

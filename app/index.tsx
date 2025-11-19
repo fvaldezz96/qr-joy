@@ -28,6 +28,8 @@ const isWeb = Platform.OS === 'web';
 const isSmall = width < 380;
 
 // === ANIMATED CARD ===
+type GradientPair = readonly [string, string];
+
 function AnimatedCard({
   href,
   children,
@@ -37,7 +39,7 @@ function AnimatedCard({
 }: {
   href: string;
   children: React.ReactNode;
-  gradient: string[];
+  gradient: GradientPair;
   iconColor: string;
   large?: boolean;
 }) {
@@ -47,11 +49,14 @@ function AnimatedCard({
   const handlePressOut = () =>
     Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
 
+  const hoverProps = isWeb
+    ? ({ onMouseEnter: handlePressIn, onMouseLeave: handlePressOut } as any)
+    : undefined;
+
   return (
     <Link href={href} style={{ flex: 1 }}>
       <Animated.View
-        onMouseEnter={isWeb ? handlePressIn : undefined}
-        onMouseLeave={isWeb ? handlePressOut : undefined}
+        {...(hoverProps || {})}
         onTouchStart={handlePressIn}
         onTouchEnd={handlePressOut}
         style={[
@@ -83,22 +88,27 @@ const USER_CARDS = [
   { href: '/(user)/products', icon: 'restaurant', color: '#FAD02C', label: 'Carta' },
   { href: '/(user)/my-qr', icon: 'qr-code', color: '#E53170', label: 'Ordenes' },
   { href: '/(user)/my-tickets', icon: 'ticket', color: '#00AEEF', label: 'Entradas' },
-];
+] as const;
+
+const STAFF_CARDS = [
+  { href: '/(admin)/comandas', icon: 'fast-food', color: '#34D399', label: 'Comandas' },
+  { href: '/(admin)/qr-scanner', icon: 'scan', color: '#FFD700', label: 'Escanear QR' },
+] as const;
 
 const ADMIN_CARDS = [
   { href: '/(admin)/dashboard', icon: 'stats-chart', color: '#FF6B9D', label: 'Dashboard' },
   { href: '/(admin)/orders-screen', icon: 'list', color: '#4FC3F7', label: 'Pedidos' },
-  { href: '/(admin)/qr-scanner', icon: 'scan', color: '#FFD700', label: 'Escanear' },
-];
+] as const;
 
 export default function Home() {
   const dispatch = useAppDispatch();
   const { user, loading } = useAppSelector((s) => s.auth);
   const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'admin' || user?.role === 'employee';
 
   const [modalVisible, setModalVisible] = useState(false);
   const [email, setEmail] = useState('valdezfede21@gmail.com');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('Clave23!');
   const [menuVisible, setMenuVisible] = useState(false);
 
   const handleLogin = async () => {
@@ -167,7 +177,7 @@ export default function Home() {
         )}
 
         {/* === USER: 3 CARDS EN COLUMNA === */}
-        {!isAdmin && (
+        {!isStaff && (
           <>
             <Text style={styles.sectionTitle}>Servicios</Text>
             <View style={styles.userGrid}>
@@ -188,24 +198,36 @@ export default function Home() {
         )}
 
         {/* === ADMIN: 6 CARDS EN GRID === */}
-        {isAdmin && (
+        {isStaff && (
           <>
-            <Text style={styles.sectionTitle}>Usuario</Text>
+            <Text style={styles.sectionTitle}>{isAdmin ? 'Operaciones' : 'Equipo'}</Text>
             <View style={styles.grid}>
-              {USER_CARDS.map((card) => (
+              {STAFF_CARDS.map((card) => (
                 <AnimatedCard
                   key={card.href}
                   href={card.href}
                   gradient={[card.color + '40', card.color + '80']}
                   iconColor={card.color}
                 >
-                  <Ionicons name={card.icon as any} size={32} color={card.color} />
-                  <Text style={[styles.cardText, { color: card.color }]}>{card.label}</Text>
+                  <Ionicons
+                    name={card.icon as any}
+                    size={28}
+                    color={card.color === '#FFD700' ? '#000' : '#fff'}
+                  />
+                  <Text
+                    style={[styles.cardTextWhite, { color: card.color === '#FFD700' ? '#000' : '#fff' }]}
+                  >
+                    {card.label}
+                  </Text>
                 </AnimatedCard>
               ))}
             </View>
+          </>
+        )}
 
-            <Text style={styles.sectionTitle}>Admin</Text>
+        {isAdmin && (
+          <>
+            <Text style={styles.sectionTitle}>Administración</Text>
             <View style={styles.grid}>
               {ADMIN_CARDS.map((card) => (
                 <AnimatedCard

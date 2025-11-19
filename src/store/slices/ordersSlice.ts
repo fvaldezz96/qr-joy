@@ -46,37 +46,43 @@ export interface GetAllOrdersResponse {
 export const createOrder = createAsyncThunk(
   'orders/create',
   async ({ tableId, type }: { tableId: string; type: string }, { getState }) => {
-    console.log('Creating order for tableId:', tableId, 'type:', type);
     const st = getState() as RootState;
-
     const items = st.cart.items.map((i) => ({
       productId: i.product._id,
       qty: i.qty,
       price: i.product.price,
     }));
 
-    // console.log('Creating order with:', { items, tableId, type });
-
-    const { data } = await axios.post('https://qrjoy-api-production.up.railway.app/orders', {
+    const body: Record<string, any> = {
       items,
       tableId,
       type,
-    });
+    };
+
+    if (st.auth.user?._id) {
+      body.userId = st.auth.user._id;
+    }
+
+    const { data } = await axios.post('http://192.168.0.12:3000/orders', body);
 
     return data.data._id as string;
   },
 );
 
-// Pagar una orden simulada
 export const payMockOrder = createAsyncThunk('orders/payMock', async (orderId: string) => {
-  const { data } = await api.post(`/orders/${orderId}/pay-mock`);
-  return data.data as OrderPayResponse;
+  try {
+    const { data } = await api.post(`/orders/${orderId}/pay-mock`);
+    return data.data as OrderPayResponse;
+    
+  } catch (error: any) {
+    console.error('Error paying order:', error);
+    throw new Error(error.response?.data?.message || 'Error paying order');
+  }
 });
 
-// Obtener todas las órdenes
 export const getAllOrders = createAsyncThunk('orders/getAll', async () => {
   try {
-    const { data } = await axios.get('https://qrjoy-api-production.up.railway.app/orders');
+    const { data } = await axios.get('http://192.168.0.12:3000/orders');
 
     const orders = data.data.orders;
     const total = data.data.total;

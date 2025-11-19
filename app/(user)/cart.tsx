@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../../src/hook';
-import { clearCart } from '../../src/store/slices/cartSlice';
+import { clearCart, removeFromCart } from '../../src/store/slices/cartSlice';
 import { createOrder, payMockOrder } from '../../src/store/slices/ordersSlice';
 
 export default function Cart() {
@@ -30,6 +30,7 @@ export default function Cart() {
 
   const total = items.reduce((a, b) => a + b.product.price * b.qty, 0);
   const [step, setStep] = useState<'cart' | 'qr'>('cart');
+  const [displayTotal, setDisplayTotal] = useState(total);
 
   // === REDIRECCIÓN SI NO HAY USUARIO ===
   useEffect(() => {
@@ -42,6 +43,13 @@ export default function Cart() {
   const totalAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    const id = totalAnim.addListener(({ value }) => {
+      setDisplayTotal(value);
+    });
+    return () => totalAnim.removeListener(id);
+  }, [totalAnim]);
+
+  useEffect(() => {
     Animated.timing(totalAnim, {
       toValue: total,
       duration: 600,
@@ -49,21 +57,19 @@ export default function Cart() {
     }).start();
   }, [total]);
 
-  const animatedTotal = totalAnim.interpolate({
-    inputRange: [0, 100000],
-    outputRange: [0, 100000],
-    extrapolate: 'clamp',
-  });
-
   const tableId = '671eec541acb10f63df915f4';
-  const type = 'restaurant';
+  const type = 'bar';
+
+  const handleRemove = (productId: string) => {
+    dispatch(removeFromCart(productId));
+  };
 
   const handlePay = async () => {
     if (!items.length) return Alert.alert('Carrito vacío');
     if (!user?._id) return Alert.alert('Error', 'Debes iniciar sesión');
 
     try {
-      const res = await dispatch(createOrder({ items, tableId, type, userId: user._id })).unwrap();
+      const res = await dispatch(createOrder({ tableId, type })).unwrap();
       await dispatch(payMockOrder(res)).unwrap();
       setStep('qr');
       dispatch(clearCart());
@@ -154,7 +160,13 @@ export default function Cart() {
               data={items}
               keyExtractor={(i) => i.product._id}
               scrollEnabled={false}
-              renderItem={({ item, index }) => <CartItem item={item} index={index} />}
+              renderItem={({ item, index }) => (
+                <CartItem
+                  item={item}
+                  index={index}
+                  onRemove={() => handleRemove(item.product._id)}
+                />
+              )}
             />
 
             {/* Total */}
@@ -162,9 +174,8 @@ export default function Cart() {
               <Text style={styles.totalLabel}>Total</Text>
               <Animated.Text style={styles.totalPrice}>
                 $
-                {animatedTotal
-                  .__getValue()
-                  .toFixed(0)
+                {Math.round(displayTotal)
+                  .toString()
                   .replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
               </Animated.Text>
             </View>
@@ -197,7 +208,7 @@ export default function Cart() {
 }
 
 // === ITEM DEL CARRITO ===
-function CartItem({ item, index }: { item: any; index: number }) {
+function CartItem({ item, index, onRemove }: { item: any; index: number; onRemove: () => void }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
 
@@ -223,7 +234,13 @@ function CartItem({ item, index }: { item: any; index: number }) {
         <Text style={styles.itemName}>{item.product.name}</Text>
         <Text style={styles.itemQty}>x{item.qty}</Text>
       </View>
-      <Text style={styles.itemPrice}>${(item.product.price * item.qty).toLocaleString()}</Text>
+      <View style={styles.itemRight}>
+        <Text style={styles.itemPrice}>${(item.product.price * item.qty).toLocaleString()}</Text>
+        <TouchableOpacity style={styles.removeButton} onPress={onRemove}>
+          <Ionicons name="trash-outline" size={16} color="#F87171" />
+          <Text style={styles.removeButtonText}>Eliminar</Text>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
@@ -291,6 +308,20 @@ const styles = StyleSheet.create({
   itemName: { color: '#fff', fontSize: 17, fontWeight: '700' },
   itemQty: { color: '#A7A9BE', fontSize: 15, marginTop: 4, fontWeight: '600' },
   itemPrice: { color: '#8B5CF6', fontSize: 18, fontWeight: '800' },
+  itemRight: { alignItems: 'flex-end' },
+  removeButton: {
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(248,113,113,0.4)',
+    backgroundColor: 'rgba(248,113,113,0.12)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  removeButtonText: { color: '#F87171', fontSize: 14, fontWeight: '700' },
 
   // Total
   totalCard: {

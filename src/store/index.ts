@@ -5,9 +5,11 @@ import { persistReducer, persistStore } from 'redux-persist';
 import adminReducer from './slices/adminSlice';
 import authReducer from './slices/authSlice';
 import cartReducer from './slices/cartSlice';
+import comandasReducer from './slices/comandasSlice';
 import entranceTicketsReducer from './slices/entranceTicketsSlice';
 import ordersReducer from './slices/ordersSlice';
 import productsReducer from './slices/productsSlice';
+import qrsReducer from './slices/qrsSlice';
 import ticketsReducer from './slices/ticketsSlice';
 const persistConfig = {
   key: 'root',
@@ -20,9 +22,11 @@ const rootReducer = combineReducers({
   products: productsReducer,
   cart: cartReducer,
   orders: ordersReducer,
+  comandas: comandasReducer,
   entranceTickets: entranceTicketsReducer,
   admin: adminReducer,
   tickets: ticketsReducer,
+  qrs: qrsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
