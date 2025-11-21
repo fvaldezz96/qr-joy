@@ -66,8 +66,11 @@ export default function MyTickets() {
 
     return Platform.OS === 'web' ? (
       <Animated.View
-        onMouseEnter={handleHoverIn}
-        onMouseLeave={handleHoverOut}
+        // onMouseEnter/onMouseLeave sólo existen en web; se castea para que TS los acepte.
+        {...({
+          onMouseEnter: handleHoverIn,
+          onMouseLeave: handleHoverOut,
+        } as any)}
         style={[styles.qrContainer, { transform: [{ scale: scaleAnim }] }]}
       >
         <View style={[styles.qrGlow, { shadowColor: '#00FFAA' }]} />

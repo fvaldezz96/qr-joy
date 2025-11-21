@@ -35,7 +35,7 @@ const initialState: QrState = {
 export const fetchUserQrs = createAsyncThunk('qrs/fetchUserQrs', async (userId: string) => {
     try {
         const { data } = await api.get(ENDPOINTS.qr.byUser(userId));
-        console.log('data : ', data);
+        // console.log('data : ', data);
         return data.data.items as UserQr[];
     } catch (error) {
         console.log('error : ', error);

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../hook';
 import { logout } from '../store/slices/authSlice';
@@ -41,13 +41,13 @@ export default function UserMenu({ visible, onClose }: Props) {
       </View>
       <TouchableOpacity style={styles.item} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-        <Text style={styles.itemText}>Cerrar sesión</Text>
+        <Text style={styles.itemText}>Cerrar sesin</Text>
       </TouchableOpacity>
     </Animated.View>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
     top: 80,
@@ -60,7 +60,12 @@ const styles = {
     borderWidth: 1,
     borderColor: '#333',
   },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    // "gap" is not in older React Native ViewStyle typings; use marginRight on avatar instead
+  },
   avatar: {
     width: 44,
     height: 44,
@@ -68,10 +73,15 @@ const styles = {
     backgroundColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 18 },
   email: { color: '#fff', fontWeight: '600' },
   role: { color: '#8B5CF6', fontSize: 12, textTransform: 'capitalize' },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  itemText: { color: '#FF3B30', fontWeight: '600' },
-};
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  itemText: { color: '#FF3B30', fontWeight: '600', marginLeft: 10 },
+});

@@ -1,5 +1,23 @@
 {
   "expo": {
+    "name": "JoyPark Mobile",
+    "slug": "joypark-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.jofre.joyparkmobile"
+    },
     "plugins": [
       [
         "expo-camera",
@@ -9,13 +27,6 @@
         }
       ],
       "expo-font"
-    ],
-    "android": {
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ],
-      "package": "com.anonymous.joyparkmobile"
-    }
+    ]
   }
 }

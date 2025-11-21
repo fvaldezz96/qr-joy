@@ -149,11 +149,11 @@ const slice = createSlice({
       .addCase(getAllOrders.fulfilled, (s, a) => {
         s.loadingOrders = false;
         s.orders = a.payload.orders;
-        s.ordersMeta = {
-          total: a.payload.total,
-          page: a.payload?.page || 1,
-          limit: a.payload?.limit || 10,
-        };
+        // s.ordersMeta = {
+        //   total: a.payload.total,
+        //   page: a.payload?.page || 1,
+        //   limit: a.payload?.limit || 10,
+        // };
       })
       .addCase(getAllOrders.rejected, (s, a) => {
         s.loadingOrders = false;

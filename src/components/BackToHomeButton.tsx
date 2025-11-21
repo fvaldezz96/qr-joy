@@ -72,7 +72,7 @@ const styles = {
     shadowRadius: 12,
   },
   web: {
-    position: 'fixed' as const,
+    position: 'absolute' as const,
     top: 20,
     left: 20,
   },

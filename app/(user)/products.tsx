@@ -187,11 +187,15 @@ function ProductCard({ product, index }: { product: any; index: number }) {
     ]).start();
   }, []);
 
-  const category = {
+  const categoryMap = {
     drink: { icon: 'wine', color: '#8B5CF6', label: 'Bebida' },
     food: { icon: 'fast-food', color: '#F59E0B', label: 'Comida' },
     ticket: { icon: 'ticket', color: '#10B981', label: 'Entrada' },
-  }[product.category] || { icon: 'cube', color: '#6B7280', label: 'Otro' };
+  } as const;
+
+  const category =
+    categoryMap[product.category as keyof typeof categoryMap] ||
+    ({ icon: 'cube', color: '#6B7280', label: 'Otro' } as const);
 
   const dispatch = useAppDispatch();
 

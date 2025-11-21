@@ -70,6 +70,7 @@ export default function QrScanner() {
       await sound.playAsync();
     } catch (e) {
       console.log('Sound error:', e);
+      // Fallback: solo vibración si el audio falla
     }
   };
 

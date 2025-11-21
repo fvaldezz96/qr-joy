@@ -46,7 +46,7 @@ function AnimatedMetric({
   label: string;
   value: string | number;
   icon: keyof typeof Ionicons.glyphMap;
-  gradient: string[];
+  gradient: readonly [string, string];
   iconColor: string;
   delay?: number;
 }) {

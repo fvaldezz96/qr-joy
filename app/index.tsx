@@ -21,6 +21,7 @@ import Toast from 'react-native-toast-message';
 import { useAppDispatch, useAppSelector } from '../src/hook';
 import { loginThunk, logout } from '../src/store/slices/authSlice';
 
+// Importación segura del logo
 const logo = require('../src/assets/logo-joywine-removebg-preview.png');
 const { width } = Dimensions.get('window');
 
@@ -213,10 +214,10 @@ export default function Home() {
                   <Ionicons
                     name={card.icon as any}
                     size={28}
-                    color={card.color === '#FFD700' ? '#000' : '#fff'}
+                    color="#fff"
                   />
                   <Text
-                    style={[styles.cardTextWhite, { color: card.color === '#FFD700' ? '#000' : '#fff' }]}
+                    style={styles.cardTextWhite}
                   >
                     {card.label}
                   </Text>
@@ -240,13 +241,10 @@ export default function Home() {
                   <Ionicons
                     name={card.icon as any}
                     size={28}
-                    color={card.color === '#FFD700' ? '#000' : '#fff'}
+                    color="#fff"
                   />
                   <Text
-                    style={[
-                      styles.cardTextWhite,
-                      { color: card.color === '#FFD700' ? '#000' : '#fff' },
-                    ]}
+                    style={styles.cardTextWhite}
                   >
                     {card.label}
                   </Text>

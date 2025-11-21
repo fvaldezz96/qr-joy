@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../../src/hook';
-import { getAllOrders } from '../../src/store/slices/ordersSlice';
+import { getAllOrders, type Order } from '../../src/store/slices/ordersSlice';
 
 // === INTERFAZ DE ITEM ===
 interface OrderItem {
@@ -23,7 +23,7 @@ interface OrderItem {
 }
 
 // === COMPONENTE DE TARJETA ANIMADA ===
-function AnimatedOrderCard({ item }: { item: any }) {
+function AnimatedOrderCard({ item }: { item: Order }) {
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -68,7 +68,14 @@ function AnimatedOrderCard({ item }: { item: any }) {
     cancelled: { color: '#E53170', icon: 'close-circle', label: 'Cancelada' },
   } as const;
 
-  const status = statusConfig[item.status] || statusConfig.pending;
+  type StatusKey = keyof typeof statusConfig;
+
+  const statusKey: StatusKey =
+    item.status === 'paid' || item.status === 'pending' || item.status === 'served' || item.status === 'cancelled'
+      ? item.status
+      : 'pending';
+
+  const status = statusConfig[statusKey];
 
   return (
     <Animated.View
@@ -79,8 +86,10 @@ function AnimatedOrderCard({ item }: { item: any }) {
           transform: [{ scale: scaleAnim }],
         },
       ]}
-      onMouseEnter={handleHoverIn}
-      onMouseLeave={handleHoverOut}
+      {...({
+        onMouseEnter: handleHoverIn,
+        onMouseLeave: handleHoverOut,
+      } as any)}
     >
       <LinearGradient
         colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}

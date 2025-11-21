@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -66,7 +67,7 @@ export default function LoginModal({ visible, onClose }: Props) {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
@@ -79,4 +80,4 @@ const styles = {
   button: { backgroundColor: '#8B5CF6', padding: 14, borderRadius: 12, alignItems: 'center' },
   buttonText: { color: '#fff', fontWeight: '700' },
   cancel: { color: '#8B5CF6', textAlign: 'center', marginTop: 8 },
-};
+});

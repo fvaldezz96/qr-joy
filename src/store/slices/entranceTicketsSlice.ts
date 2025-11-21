@@ -7,6 +7,7 @@ import { RootState } from '../index';
 export type TicketType = 'joypark' | 'joyweek' | 'joybox';
 
 export interface EntranceTicket {
+  id: string;
   _id: string;
   userId: string;
   type: TicketType;
@@ -38,7 +39,7 @@ export type PurchaseResponse = {
 };
 
 // === ADAPTER ===
-const ticketsAdapter = createEntityAdapter<EntranceTicket>({
+const ticketsAdapter = createEntityAdapter<EntranceTicket, string>({
   selectId: (t) => t._id,
   sortComparer: (a, b) => new Date(b.validUntil).getTime() - new Date(a.validUntil).getTime(),
 });
@@ -104,7 +105,7 @@ export const purchaseTickets = createAsyncThunk<
     { ticketType, quantity },
     {
       headers: { 'x-user-id': userId },
-      ipcipc,
+      // ipcipc,
     },
   );
   return data.data.purchase as PurchaseResponse;
