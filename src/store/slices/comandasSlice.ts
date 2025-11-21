@@ -21,6 +21,7 @@ export interface Comanda {
   station: ComandaStation;
   status: ComandaStatus;
   items: ComandaItem[];
+   tableNumber?: number;
   createdAt?: string;
   updatedAt?: string;
 }

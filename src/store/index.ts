@@ -10,6 +10,7 @@ import entranceTicketsReducer from './slices/entranceTicketsSlice';
 import ordersReducer from './slices/ordersSlice';
 import productsReducer from './slices/productsSlice';
 import qrsReducer from './slices/qrsSlice';
+import tablesReducer from './slices/tablesSlice';
 import ticketsReducer from './slices/ticketsSlice';
 const persistConfig = {
   key: 'root',
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   comandas: comandasReducer,
   entranceTickets: entranceTicketsReducer,
   admin: adminReducer,
+  tables: tablesReducer,
   tickets: ticketsReducer,
   qrs: qrsReducer,
 });

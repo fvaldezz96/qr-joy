@@ -7,7 +7,9 @@ import {
   Animated,
   FlatList,
   ImageBackground,
+  Modal,
   Platform,
+  Share,
   Text,
   TouchableOpacity,
   View,
@@ -40,7 +42,7 @@ export default function QRScreen() {
   const latestUserQr = userQrs[0];
   const code = params.code || latestUserQr?.qr.code;
   const signature = params.signature || latestUserQr?.qr.signature;
-  const headlineTable = latestUserQr?.tableId || '—';
+  const headlineTable = latestUserQr?.tableNumber ?? latestUserQr?.tableId ?? '—';
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -74,6 +76,19 @@ export default function QRScreen() {
   };
   const handlePressOut = () => {
     Animated.spring(bounceAnim, { toValue: 1, useNativeDriver: true }).start();
+  };
+
+  const [zoomVisible, setZoomVisible] = useState(false);
+  const [zoomQrData, setZoomQrData] = useState<string | null>(null);
+
+  const handleShare = async (qrPayload: string) => {
+    try {
+      await Share.share({
+        message: qrPayload,
+      });
+    } catch (error) {
+      console.error('Error sharing QR:', error);
+    }
   };
 
   const goBack = () => {
@@ -217,7 +232,7 @@ export default function QRScreen() {
                     </View>
                     <View style={styles.infoRow}>
                       <Ionicons name="location" size={16} color="#00AEEF" />
-                      <Text style={styles.infoText}>Mesa {item.tableId || '—'}</Text>
+                      <Text style={styles.infoText}>Mesa {item.tableNumber ?? item.tableId ?? '—'}</Text>
                     </View>
                     <View style={styles.infoRow}>
                       <Ionicons name="time" size={16} color="#A7A9BE" />
@@ -234,12 +249,28 @@ export default function QRScreen() {
                   </View>
 
                   <View style={styles.qrMiniSection}>
-                    <View style={styles.qrMiniContainer}>
-                      <QRCode value={qrData} size={110} />
-                    </View>
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => {
+                        setZoomQrData(qrData);
+                        setZoomVisible(true);
+                      }}
+                    >
+                      <View style={styles.qrMiniContainer}>
+                        <QRCode value={qrData} size={110} />
+                      </View>
+                    </TouchableOpacity>
                     <Text style={styles.qrReady}>
                       {item.qr.state === 'redeemed' ? 'QR usado' : 'QR activo'}
                     </Text>
+                    <TouchableOpacity
+                      style={styles.shareButton}
+                      onPress={() => handleShare(qrData)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="share-social" size={16} color="#0F172A" />
+                      <Text style={styles.shareButtonText}>Compartir QR</Text>
+                    </TouchableOpacity>
                   </View>
                 </LinearGradient>
               </ImageBackground>
@@ -262,6 +293,21 @@ export default function QRScreen() {
           </Animated.View>
         }
       />
+
+      <Modal visible={zoomVisible} transparent animationType="fade">
+        <View style={styles.zoomOverlay}>
+          <TouchableOpacity style={styles.zoomBackdrop} activeOpacity={1} onPress={() => setZoomVisible(false)} />
+          <View style={styles.zoomContent}>
+            <Text style={styles.zoomTitle}>Mostrá este QR al staff</Text>
+            <View style={styles.zoomQrContainer}>
+              {zoomQrData && <QRCode value={zoomQrData} size={260} />}
+            </View>
+            <TouchableOpacity style={styles.zoomCloseButton} onPress={() => setZoomVisible(false)}>
+              <Text style={styles.zoomCloseText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -425,6 +471,63 @@ const styles = {
     borderColor: '#00FFAA40',
   },
   qrReady: { marginTop: 10, fontSize: 14, color: '#00FFAA', fontWeight: '800' },
+  shareButton: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#FAD02C',
+  },
+  shareButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+    textTransform: 'uppercase',
+  },
+
+  zoomOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  zoomContent: {
+    backgroundColor: '#111827',
+    padding: 24,
+    borderRadius: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(156,163,175,0.6)',
+  },
+  zoomTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F9FAFB',
+    marginBottom: 16,
+  },
+  zoomQrContainer: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginBottom: 20,
+  },
+  zoomCloseButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#10B981',
+  },
+  zoomCloseText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
   homeButton: {
     borderRadius: 20,

@@ -1,4 +1,3 @@
-// components/BackToHomeButton.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname, useRouter } from 'expo-router';
@@ -20,8 +19,6 @@ export default function BackToHomeButton() {
   const router = useRouter();
   const pathname = usePathname();
 
-  if (EXCLUDED_ROUTES.includes(pathname)) return null;
-
   const bounceAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
 
@@ -30,7 +27,10 @@ export default function BackToHomeButton() {
       Animated.spring(bounceAnim, { toValue: 1, friction: 8, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [bounceAnim, slideAnim]);
+
+  const shouldShow = !EXCLUDED_ROUTES.includes(pathname);
+  if (!shouldShow) return null;
 
   const handlePress = () => {
     Animated.spring(bounceAnim, { toValue: 0.95, useNativeDriver: true }).start(() => {

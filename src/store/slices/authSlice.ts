@@ -49,6 +49,30 @@ export const loginThunk = createAsyncThunk(
   },
 );
 
+// ✅ Registro de usuario (rol user por defecto en el backend)
+export const registerThunk = createAsyncThunk(
+  'auth/register',
+  async (body: { name: string; email: string; password: string; cel: string }) => {
+    const cleanEmail = sanitize(body.email);
+    const cleanPass = sanitize(body.password);
+    const cleanName = sanitize(body.name);
+    const celNumber = Number(String(body.cel).replace(/\D/g, ''));
+
+    const { data } = await api.post('/auth/register', {
+      email: cleanEmail,
+      password: cleanPass,
+      name: cleanName,
+      cel: celNumber,
+    });
+
+    const payload = data.data as { token: string; user: User };
+
+    await saveToken(payload.token);
+    setAuthToken(payload.token);
+    return payload;
+  },
+);
+
 // ✅ Revalidar usuario usando el token almacenado
 export const meThunk = createAsyncThunk('auth/me', async () => {
   const storedToken = await readToken();
@@ -81,6 +105,19 @@ const slice = createSlice({
         s.user = a.payload.user;
       })
       .addCase(loginThunk.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.error.message;
+      })
+      .addCase(registerThunk.pending, (s) => {
+        s.loading = true;
+        s.error = undefined;
+      })
+      .addCase(registerThunk.fulfilled, (s, a: PayloadAction<{ token: string; user: User }>) => {
+        s.loading = false;
+        s.token = a.payload.token;
+        s.user = a.payload.user;
+      })
+      .addCase(registerThunk.rejected, (s, a) => {
         s.loading = false;
         s.error = a.error.message;
       })

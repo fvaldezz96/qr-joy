@@ -93,6 +93,7 @@ const USER_CARDS = [
 const STAFF_CARDS = [
   { href: '/(admin)/comandas', icon: 'fast-food', color: '#34D399', label: 'Comandas' },
   { href: '/(admin)/qr-scanner', icon: 'scan', color: '#FFD700', label: 'Escanear QR' },
+  { href: '/(admin)/tables', icon: 'restaurant', color: '#F97316', label: 'Mesas' },
 ] as const;
 
 const ADMIN_CARDS = [
@@ -294,6 +295,11 @@ export default function Home() {
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={styles.cancelText}>Cancelar</Text>
             </TouchableOpacity>
+            <Link href="/(auth)/register" asChild>
+              <TouchableOpacity>
+                <Text style={styles.registerText}>¿No tenés cuenta? Crear cuenta</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
         </View>
       </Modal>
@@ -528,6 +534,13 @@ const styles = StyleSheet.create({
   },
   loginBtnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
   cancelText: { color: '#8B5CF6', textAlign: 'center', fontWeight: '600', marginTop: 8 },
+  registerText: {
+    color: '#FAD02C',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginTop: 12,
+    textDecorationLine: 'underline',
+  },
 
   // FOOTER
   footer: {

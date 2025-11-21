@@ -74,6 +74,9 @@ function ComandaCard({ comanda, onUpdate }: { comanda: Comanda; onUpdate: (statu
         <View>
           <Text style={styles.cardLabel}>Orden #{comanda.orderId.slice(-6).toUpperCase()}</Text>
           <Text style={styles.cardSub}>Estación: {comanda.station === 'bar' ? 'Barra' : 'Cocina'}</Text>
+          {typeof comanda.tableNumber === 'number' && (
+            <Text style={styles.cardSub}>Mesa: {comanda.tableNumber}</Text>
+          )}
         </View>
         <View style={[styles.statusBadge, { backgroundColor: cfg.color + '22' }] }>
           <Ionicons name={cfg.icon} size={16} color={cfg.color} />

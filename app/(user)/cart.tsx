@@ -19,6 +19,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../../src/hook';
 import { clearCart, removeFromCart } from '../../src/store/slices/cartSlice';
 import { createOrder, payMockOrder } from '../../src/store/slices/ordersSlice';
+import { fetchTables, selectActiveTables } from '../../src/store/slices/tablesSlice';
 
 export default function Cart() {
   const router = useRouter();
@@ -27,10 +28,12 @@ export default function Cart() {
   const { items } = useAppSelector((s) => s.cart);
   const { qr, loading } = useAppSelector((s) => s.orders);
   const { user, loading: authLoading } = useAppSelector((s) => s.auth);
+  const activeTables = useAppSelector(selectActiveTables);
 
   const total = items.reduce((a, b) => a + b.product.price * b.qty, 0);
   const [step, setStep] = useState<'cart' | 'qr'>('cart');
   const [displayTotal, setDisplayTotal] = useState(total);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   // === REDIRECCIÓN SI NO HAY USUARIO ===
   useEffect(() => {
@@ -57,7 +60,10 @@ export default function Cart() {
     }).start();
   }, [total]);
 
-  const tableId = '671eec541acb10f63df915f4';
+  useEffect(() => {
+    dispatch(fetchTables());
+  }, [dispatch]);
+
   const type = 'bar';
 
   const handleRemove = (productId: string) => {
@@ -67,9 +73,10 @@ export default function Cart() {
   const handlePay = async () => {
     if (!items.length) return Alert.alert('Carrito vacío');
     if (!user?._id) return Alert.alert('Error', 'Debes iniciar sesión');
+    if (!selectedTableId) return Alert.alert('Error', 'Seleccioná una mesa antes de continuar');
 
     try {
-      const res = await dispatch(createOrder({ tableId, type })).unwrap();
+      const res = await dispatch(createOrder({ tableId: selectedTableId, type })).unwrap();
       await dispatch(payMockOrder(res)).unwrap();
       setStep('qr');
       dispatch(clearCart());
@@ -156,6 +163,37 @@ export default function Cart() {
           </View>
         ) : (
           <>
+            {/* Selector de mesa */}
+            <View style={styles.tableSelectorCard}>
+              <Text style={styles.tableSelectorLabel}>Seleccioná tu mesa</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {activeTables.map((t) => (
+                  <TouchableOpacity
+                    key={t._id}
+                    style={[
+                      styles.tableChip,
+                      selectedTableId === t._id && styles.tableChipSelected,
+                    ]}
+                    onPress={() => setSelectedTableId(t._id)}
+                  >
+                    <Text
+                      style={[
+                        styles.tableChipText,
+                        selectedTableId === t._id && styles.tableChipTextSelected,
+                      ]}
+                    >
+                      Mesa {t.number}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {activeTables.length === 0 && (
+                <Text style={styles.tableSelectorHint}>
+                  No hay mesas configuradas. Pedile a un administrador que las cree.
+                </Text>
+              )}
+            </View>
+
             <FlatList
               data={items}
               keyExtractor={(i) => i.product._id}
@@ -399,4 +437,43 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   doneText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  tableSelectorCard: {
+    backgroundColor: 'rgba(15,23,42,0.9)',
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.5)',
+    marginBottom: 18,
+  },
+  tableSelectorLabel: {
+    color: '#E5E7EB',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  tableChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.6)',
+    marginRight: 8,
+    backgroundColor: 'rgba(15,23,42,0.9)',
+  },
+  tableChipSelected: {
+    backgroundColor: '#8B5CF6',
+    borderColor: '#A855F7',
+  },
+  tableChipText: {
+    color: '#E5E7EB',
+    fontWeight: '600',
+  },
+  tableChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  tableSelectorHint: {
+    marginTop: 8,
+    color: '#9CA3AF',
+    fontSize: 12,
+  },
 });

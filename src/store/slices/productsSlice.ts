@@ -1,7 +1,8 @@
 // src/store/slices/productsSlice.ts
 import { createAsyncThunk, createEntityAdapter, createSlice } from '@reduxjs/toolkit';
-import axios from 'axios';
 
+import api from '../../api/client';
+import { ENDPOINTS } from '../../config';
 import { RootState } from '../index';
 
 // === TIPOS ===
@@ -28,15 +29,28 @@ export type UpsertProductDto = Omit<Product, '_id' | 'createdAt' | 'updatedAt'>;
 
 // === ADAPTER ===
 const productsAdapter = createEntityAdapter<Product>({
-  selectId: (p: any) => p._id,
-  sortComparer: (a, b) => a.name.localeCompare(b.name),
+  sortComparer: (a: Product, b: Product) => a.name.localeCompare(b.name),
 });
+
+export const createProduct = createAsyncThunk<Product, Partial<Product>>(
+  'products/create',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post(ENDPOINTS.products.create, payload);
+      return data.data as Product;
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || 'No se pudo crear el producto');
+    }
+  },
+);
 
 interface ProductsState {
   loading: boolean;
   loadingByCategory: Record<ProductCategory | 'all', boolean>;
   error: string | null;
   lastFetched: number;
+  creating: boolean;
+  createError: string | null;
 }
 
 const initialState = productsAdapter.getInitialState<ProductsState>({
@@ -44,14 +58,18 @@ const initialState = productsAdapter.getInitialState<ProductsState>({
   loadingByCategory: { all: false, drink: false, food: false, ticket: false },
   error: null,
   lastFetched: 0,
+  creating: false,
+  createError: null,
 });
 
 // === THUNKS ===
 
+type FetchProductsArgs = { force?: boolean; category?: ProductCategory | 'all' };
+
 /** TRAE PRODUCTOS CON FILTRO OPCIONAL + CACHÉ */
 export const fetchProducts = createAsyncThunk<
   Product[],
-  { force?: boolean } | void,
+  FetchProductsArgs | void,
   { state: RootState }
 >(
   'products/fetchAll',
@@ -66,7 +84,7 @@ export const fetchProducts = createAsyncThunk<
     }
 
     // TRAE TODO
-    const { data } = await axios.get('http://192.168.0.12:3000/products');
+    const { data } = await api.get(ENDPOINTS.products.base);
     return data.data.items as Product[];
   },
   {
@@ -94,12 +112,12 @@ const productsSlice = createSlice({
     builder
       // === FETCH ALL ===
       .addCase(fetchProducts.pending, (state, action) => {
-        const category = action.meta.arg?.category || 'all';
+        const category = (action.meta.arg as FetchProductsArgs | undefined)?.category || 'all';
         state.loadingByCategory[category] = true;
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
-        const category = action.meta.arg?.category || 'all';
+        const category = (action.meta.arg as FetchProductsArgs | undefined)?.category || 'all';
         state.loadingByCategory[category] = false;
         state.lastFetched = Date.now();
 
@@ -114,9 +132,21 @@ const productsSlice = createSlice({
         }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
-        const category = action.meta.arg?.category || 'all';
+        const category = (action.meta.arg as FetchProductsArgs | undefined)?.category || 'all';
         state.loadingByCategory[category] = false;
         state.error = action.error.message || 'Error al cargar productos';
+      })
+      .addCase(createProduct.pending, (state) => {
+        state.creating = true;
+        state.createError = null;
+      })
+      .addCase(createProduct.fulfilled, (state, action) => {
+        state.creating = false;
+        productsAdapter.addOne(state, action.payload);
+      })
+      .addCase(createProduct.rejected, (state, action) => {
+        state.creating = false;
+        state.createError = (action.payload as string) || action.error.message || null;
       });
   },
 });
@@ -133,6 +163,8 @@ export const selectProductById = productsSelectors.selectById;
 export const selectProductsLoading = (state: RootState) => state.products.loading;
 export const selectProductsError = (state: RootState) => state.products.error;
 export const selectLastFetched = (state: RootState) => state.products.lastFetched;
+export const selectProductCreating = (state: RootState) => state.products.creating;
+export const selectProductCreateError = (state: RootState) => state.products.createError;
 
 export const selectProductsByCategory =
   (category: ProductCategory | 'all') =>

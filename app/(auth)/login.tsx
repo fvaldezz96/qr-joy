@@ -19,10 +19,10 @@ export default function Login() {
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Email inválido', 'Revisá el formato del correo');
-      return;
-    }
+    // if (!/\S+@\S+\.\S+/.test(email)) {
+    //   Alert.alert('Email inválido', 'Revisá el formato del correo');
+    //   return;
+    // }
 
     if (attempts >= 3) {
       Alert.alert('Demasiados intentos', 'Esperá unos minutos antes de volver a intentar');

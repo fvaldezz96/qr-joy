@@ -6,6 +6,7 @@ import { ENDPOINTS } from '../../config';
 export interface UserQr {
     orderId: string;
     tableId?: string;
+    tableNumber?: number;
     total: number;
     status: string;
     createdAt?: string;
