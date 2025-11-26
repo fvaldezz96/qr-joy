@@ -3,6 +3,8 @@ import { createAsyncThunk, createEntityAdapter, createSlice } from '@reduxjs/too
 
 import api from '../../api/client';
 import { ENDPOINTS } from '../../config';
+import { setAuthToken } from '../../api/setAuthToken';
+import { readToken } from '../../utils/tokenStorage';
 import { RootState } from '../index';
 
 // === TIPOS ===
@@ -36,6 +38,12 @@ export const createProduct = createAsyncThunk<Product, Partial<Product>>(
   'products/create',
   async (payload, { rejectWithValue }) => {
     try {
+      // Aseguramos que el token esté aplicado al cliente antes de llamar al API
+      const storedToken = await readToken();
+      if (storedToken) {
+        setAuthToken(storedToken);
+      }
+
       const { data } = await api.post(ENDPOINTS.products.create, payload);
       return data.data as Product;
     } catch (error: any) {
