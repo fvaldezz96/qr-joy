@@ -15,6 +15,9 @@ import {
 } from 'react-native';
 
 import api from '../../src/api/client';
+import { ENDPOINTS } from '../../src/config';
+import { setAuthToken } from '../../src/api/setAuthToken';
+import { readToken } from '../../src/utils/tokenStorage';
 import { useAppSelector } from '../../src/hook';
 
 interface Product {
@@ -42,12 +45,15 @@ export default function AdminProductsScreen() {
   const [category, setCategory] = useState<'drink' | 'food' | 'ticket'>('drink');
   const [sku, setSku] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [stockBar, setStockBar] = useState('');
+  const [stockRestaurant, setStockRestaurant] = useState('');
+  const [stockDoor, setStockDoor] = useState('');
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const { data } = await api.get('/products', { params: { limit: 100 } });
+      const { data } = await api.get(ENDPOINTS.products.base, { params: { limit: 100 } });
       const items = (data?.data?.items ?? []) as Product[];
       setProducts(items);
     } catch (e: any) {
@@ -69,18 +75,34 @@ export default function AdminProductsScreen() {
     try {
       setSubmitting(true);
       setError(null);
-      await api.post('/products', {
+      // Aseguramos que el token esté aplicado al cliente antes de llamar al API
+      const storedToken = await readToken();
+      if (storedToken) {
+        setAuthToken(storedToken);
+      }
+
+      const initialStock: Record<'bar' | 'restaurant' | 'door', number> = {
+        bar: stockBar.trim() ? Number(stockBar) || 0 : 0,
+        restaurant: stockRestaurant.trim() ? Number(stockRestaurant) || 0 : 0,
+        door: stockDoor.trim() ? Number(stockDoor) || 0 : 0,
+      };
+
+      await api.post(ENDPOINTS.products.create, {
         name: name.trim(),
         category,
         price: numericPrice,
         active: true,
         sku: sku.trim() || undefined,
         imageUrl: imageUrl.trim() || undefined,
+        initialStock,
       });
       setName('');
       setPrice('');
       setSku('');
       setImageUrl('');
+      setStockBar('');
+      setStockRestaurant('');
+      setStockDoor('');
       await loadProducts();
     } catch (e: any) {
       setError('Error al crear producto');
@@ -166,6 +188,39 @@ export default function AdminProductsScreen() {
             value={imageUrl}
             onChangeText={setImageUrl}
           />
+
+          <View style={styles.stockRow}>
+            <View style={{ flex: 1, marginRight: 4 }}>
+              <TextInput
+                style={styles.input}
+                placeholder="Stock bar"
+                placeholderTextColor="#6B7280"
+                keyboardType="number-pad"
+                value={stockBar}
+                onChangeText={setStockBar}
+              />
+            </View>
+            <View style={{ flex: 1, marginHorizontal: 4 }}>
+              <TextInput
+                style={styles.input}
+                placeholder="Stock restaurante"
+                placeholderTextColor="#6B7280"
+                keyboardType="number-pad"
+                value={stockRestaurant}
+                onChangeText={setStockRestaurant}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: 4 }}>
+              <TextInput
+                style={styles.input}
+                placeholder="Stock puerta"
+                placeholderTextColor="#6B7280"
+                keyboardType="number-pad"
+                value={stockDoor}
+                onChangeText={setStockDoor}
+              />
+            </View>
+          </View>
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -320,4 +375,5 @@ const styles = StyleSheet.create({
   itemRight: { alignItems: 'flex-end' },
   itemPrice: { color: '#FAD02C', fontWeight: '800', fontSize: 16 },
   inactive: { color: '#FCA5A5', fontSize: 11, marginTop: 2 },
+  stockRow: { flexDirection: 'row', marginTop: 4, marginBottom: 4 },
 });
