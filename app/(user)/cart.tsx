@@ -4,10 +4,10 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   FlatList,
   Image,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -18,8 +18,9 @@ import {
 
 import { useAppDispatch, useAppSelector } from '../../src/hook';
 import { clearCart, removeFromCart } from '../../src/store/slices/cartSlice';
-import { confirmMpPayment, createMpPayment, createOrder } from '../../src/store/slices/ordersSlice';
+import { confirmMpPayment, createMpPayment, createOrder, payMockOrder } from '../../src/store/slices/ordersSlice';
 import { fetchTables, selectActiveTables } from '../../src/store/slices/tablesSlice';
+import { showAlert } from '../../src/utils/showAlert';
 
 export default function Cart() {
   const router = useRouter();
@@ -34,6 +35,8 @@ export default function Cart() {
   const [step, setStep] = useState<'cart' | 'qr'>('cart');
   const [displayTotal, setDisplayTotal] = useState(total);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const DEMO_INTERNAL_EMAILS = ['demo@demo.com', 'admin@demo.com', 'employee@demo.com'];
+  const isInternalDemoUser = !!user && DEMO_INTERNAL_EMAILS.includes(user.email);
 
   // === REDIRECCIÓN SI NO HAY USUARIO ===
   useEffect(() => {
@@ -70,24 +73,49 @@ export default function Cart() {
     dispatch(removeFromCart(productId));
   };
 
-  const handlePay = async () => {
-    if (!items.length) return Alert.alert('Carrito vacío');
-    if (!user?._id) return Alert.alert('Error', 'Debes iniciar sesión');
-    if (!selectedTableId) return Alert.alert('Error', 'Seleccioná una mesa antes de continuar');
+  const validateBeforePay = () => {
+    if (!items.length) return showAlert('Carrito vacío', 'Agregá productos antes de pagar.');
+    if (!user?._id) return showAlert('Error', 'Debes iniciar sesión');
+    if (!selectedTableId) return showAlert('Error', 'Seleccioná una mesa antes de continuar');
+    return true;
+  };
+
+  const handlePayMp = async () => {
+    if (!validateBeforePay()) return;
 
     try {
-      const orderId = await dispatch(createOrder({ tableId: selectedTableId, type })).unwrap();
+      const orderId = await dispatch(createOrder({ tableId: selectedTableId!, type })).unwrap();
 
       const pref = await dispatch(createMpPayment({ orderId })).unwrap();
 
-      // TODO: abrir pref.initPoint en WebView / navegador para que el usuario complete el pago
-      // Por ahora, asumimos que el pago fue aprobado y confirmamos directamente por orderId.
+      // Abrir la URL de pago de Mercado Pago
+      if (Platform.OS === 'web') {
+        window.open(pref.initPoint, '_blank');
+      } else {
+        await Linking.openURL(pref.initPoint);
+      }
 
+      // Por ahora, seguimos confirmando por orderId para mostrar el QR inmediatamente.
+      // Más adelante se puede ajustar para usar paymentId o confiar solo en el webhook.
       await dispatch(confirmMpPayment({ orderId })).unwrap();
       setStep('qr');
       dispatch(clearCart());
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'No se pudo procesar el pago');
+      showAlert('Error', error.message || 'No se pudo procesar el pago');
+    }
+  };
+
+  const handlePayCash = async () => {
+    if (!validateBeforePay()) return;
+
+    try {
+      const orderId = await dispatch(createOrder({ tableId: selectedTableId!, type })).unwrap();
+
+      const res = await dispatch(payMockOrder(orderId)).unwrap();
+      setStep('qr');
+      dispatch(clearCart());
+    } catch (error: any) {
+      showAlert('Error', error.message || 'No se pudo generar el QR');
     }
   };
 
@@ -225,25 +253,69 @@ export default function Cart() {
             </View>
 
             {/* Pagar */}
-            <TouchableOpacity
-              style={[styles.payButton, loading && styles.payButtonDisabled]}
-              onPress={handlePay}
-              disabled={loading}
-            >
-              <LinearGradient
-                colors={loading ? ['#6B7280', '#4B5563'] : ['#8B5CF6', '#EC4899']}
-                style={styles.payGradient}
+            {isInternalDemoUser ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.payButton, loading && styles.payButtonDisabled]}
+                  onPress={handlePayMp}
+                  disabled={loading}
+                >
+                  <LinearGradient
+                    colors={loading ? ['#6B7280', '#4B5563'] : ['#8B5CF6', '#EC4899']}
+                    style={styles.payGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="card" size={22} color="#fff" />
+                        <Text style={styles.payText}>Pagar con Mercado Pago</Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.payButton, loading && styles.payButtonDisabled]}
+                  onPress={handlePayCash}
+                  disabled={loading}
+                >
+                  <LinearGradient
+                    colors={loading ? ['#6B7280', '#4B5563'] : ['#10B981', '#059669']}
+                    style={styles.payGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="cash" size={22} color="#fff" />
+                        <Text style={styles.payText}>Generar QR y pagar en efectivo</Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[styles.payButton, loading && styles.payButtonDisabled]}
+                onPress={handlePayMp}
+                disabled={loading}
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="card" size={22} color="#fff" />
-                    <Text style={styles.payText}>Generar QR (Mock)</Text>
-                  </>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={loading ? ['#6B7280', '#4B5563'] : ['#8B5CF6', '#EC4899']}
+                  style={styles.payGradient}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="card" size={22} color="#fff" />
+                      <Text style={styles.payText}>Pagar con Mercado Pago</Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </ScrollView>

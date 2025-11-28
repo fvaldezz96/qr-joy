@@ -18,6 +18,7 @@ import api from '../../src/api/client';
 import { ENDPOINTS } from '../../src/config';
 import { setAuthToken } from '../../src/api/setAuthToken';
 import { readToken } from '../../src/utils/tokenStorage';
+import { showAlert } from '../../src/utils/showAlert';
 import { useAppSelector } from '../../src/hook';
 
 interface Product {
@@ -106,6 +107,7 @@ export default function AdminProductsScreen() {
       await loadProducts();
     } catch (e: any) {
       setError('Error al crear producto');
+      showAlert('Error', 'No se pudo crear el producto. Verificá los datos e intentá de nuevo.');
     } finally {
       setSubmitting(false);
     }

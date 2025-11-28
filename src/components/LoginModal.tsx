@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 
 import { useAppDispatch, useAppSelector } from '../hook';
 import { loginThunk } from '../store/slices/authSlice';
+import { showAlert } from '../utils/showAlert';
 
 interface Props {
   visible: boolean;
@@ -29,7 +29,7 @@ export default function LoginModal({ visible, onClose }: Props) {
       await dispatch(loginThunk({ email, password })).unwrap();
       onClose();
     } catch {
-      Alert.alert('Error', 'Credenciales inválidas');
+      showAlert('Error', 'Credenciales inválidas');
     }
   };
 

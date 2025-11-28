@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 
-import { useAppDispatch } from '../../src/hook';
+import { useAppDispatch, useAppSelector } from '../../src/hook';
 import { redeemQr } from '../../src/store/slices/adminSlice';
 
 const { width } = Dimensions.get('window');
@@ -27,6 +27,8 @@ export default function QrScanner() {
   const [scanned, setScanned] = useState(false);
   const [status, setStatus] = useState<'idle' | 'scanning' | 'success' | 'error'>('idle');
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((s) => s.auth);
+  const isStaff = user?.role === 'admin' || user?.role === 'employee';
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -120,6 +122,16 @@ export default function QrScanner() {
       triggerResult('error');
     }
   };
+
+  if (!isStaff) {
+    return (
+      <LinearGradient colors={['#0F0E17', '#1A0B2E']} style={styles.center}>
+        <Ionicons name="shield-checkmark" size={64} color="#FAD02C" />
+        <Text style={styles.permissionTitle}>Solo personal autorizado</Text>
+        <Text style={styles.permissionText}>Iniciá sesión como admin o empleado para usar el escáner.</Text>
+      </LinearGradient>
+    );
+  }
 
   if (isWeb) {
     return (
