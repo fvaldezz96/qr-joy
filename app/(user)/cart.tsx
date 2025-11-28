@@ -35,7 +35,12 @@ export default function Cart() {
   const [step, setStep] = useState<'cart' | 'qr'>('cart');
   const [displayTotal, setDisplayTotal] = useState(total);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-  const DEMO_INTERNAL_EMAILS = ['demo@demo.com', 'admin@demo.com', 'employee@demo.com'];
+  const DEMO_INTERNAL_EMAILS = [
+    'demo@demo.com',
+    'admin@demo.com',
+    'employee@demo.com',
+    'user.demo@joywine.com',
+  ];
   const isInternalDemoUser = !!user && DEMO_INTERNAL_EMAILS.includes(user.email);
 
   // === REDIRECCIÓN SI NO HAY USUARIO ===
