@@ -26,6 +26,15 @@ export default function QrScanner() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [status, setStatus] = useState<'idle' | 'scanning' | 'success' | 'error'>('idle');
+  const [lastOrder, setLastOrder] = useState<
+    | {
+        id: string;
+        total: number;
+        status: string;
+        items: { productId: string; name: string; qty: number; price: number; subtotal: number }[];
+      }
+    | null
+  >(null);
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
   const isStaff = user?.role === 'admin' || user?.role === 'employee';
@@ -116,9 +125,12 @@ export default function QrScanner() {
 
     try {
       const payload = JSON.parse(data) as { c: string; s: string };
-      await dispatch(redeemQr({ code: payload.c, signature: payload.s })).unwrap();
-      triggerResult('success');
+      const res = await dispatch(redeemQr({ code: payload.c, signature: payload.s })).unwrap();
+      const order = res?.data?.order ?? null;
+      setLastOrder(order);
+      triggerResult(order ? 'success' : 'error');
     } catch (e: any) {
+      setLastOrder(null);
       triggerResult('error');
     }
   };
@@ -225,10 +237,23 @@ export default function QrScanner() {
           {status === 'idle' && <Text style={styles.statusText}>Listo para escanear</Text>}
           {status === 'scanning' && <Text style={styles.statusText}>Validando...</Text>}
           {status === 'success' && (
-            <Text style={[styles.statusText, { color: '#00FF88' }]}>Entrada validada</Text>
+            <>
+              <Text style={[styles.statusText, { color: '#00FF88' }]}>QR válido</Text>
+              {lastOrder && (
+                <View style={styles.orderBox}>
+                  <Text style={styles.orderTitle}>Detalle del pedido</Text>
+                  {lastOrder.items.map((it) => (
+                    <Text key={it.productId} style={styles.orderItem}>
+                      {it.qty} x {it.name} (${it.subtotal})
+                    </Text>
+                  ))}
+                  <Text style={styles.orderTotal}>Total: ${lastOrder.total}</Text>
+                </View>
+              )}
+            </>
           )}
           {status === 'error' && (
-            <Text style={[styles.statusText, { color: '#E53170' }]}>QR inválido</Text>
+            <Text style={[styles.statusText, { color: '#E53170' }]}>QR inválido o sin pedido</Text>
           )}
         </View>
       </View>
@@ -341,6 +366,31 @@ const styles = {
     color: '#FAD02C',
     textShadowColor: '#FAD02C50',
     textShadowRadius: 8,
+  },
+  orderBox: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(15,23,42,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.6)',
+    width: '100%',
+  },
+  orderTitle: {
+    color: '#E5E7EB',
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  orderItem: {
+    color: '#D1D5DB',
+    fontSize: 14,
+  },
+  orderTotal: {
+    marginTop: 6,
+    color: '#FCD34D',
+    fontWeight: '800',
+    textAlign: 'right',
   },
   permissionBox: {
     backgroundColor: 'rgba(255,255,255,0.1)',

@@ -21,8 +21,8 @@ import Toast from 'react-native-toast-message';
 import { useAppDispatch, useAppSelector } from '../src/hook';
 import { loginThunk, logout } from '../src/store/slices/authSlice';
 
-// Importación segura del logo
-const logo = require('../src/assets/logo-joywine-removebg-preview.png');
+// Importación segura del logo (asegurarse de que el archivo exista con este nombre)
+const logo = require('../src/assets/IMG_1459.png');
 const { width } = Dimensions.get('window');
 
 const isWeb = Platform.OS === 'web';
@@ -110,8 +110,8 @@ export default function Home() {
   const isStaff = user?.role === 'admin' || user?.role === 'employee';
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [email, setEmail] = useState('valdezfede21@gmail.com');
-  const [password, setPassword] = useState('Clave23!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
 
   const handleLogin = async () => {
@@ -142,7 +142,7 @@ export default function Home() {
         {/* HEADER CENTRADO */}
         <View style={styles.header}>
           <Image source={logo} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.appName}>JOYWINE</Text>
+          {/* <Text style={styles.appName}>JOYWINE</Text> */}
           <Text style={styles.season}>• Temporada Verano 2026 •</Text>
 
           {/* AVATAR */}
@@ -326,14 +326,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     borderRadius: 50,
-    backgroundColor: '#fff',
     padding: 8,
     shadowColor: '#FAD02C',
     shadowOpacity: 0.4,
-    shadowRadius: 20,
     elevation: 15,
   },
   appName: {

@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     marginBottom: 36,
     width: '100%',
   },
-  qrTitle: { fontSize: 32, fontWeight: '900', color: '#00FFAA' },
+  qrTitle: { fontSize: 32, fontWeight: '900', color: '#00FFAA', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
   qrCard: {
     borderRadius: 28,
     overflow: 'hidden',
