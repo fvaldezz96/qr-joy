@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../hook';
-import { loginThunk } from '../store/slices/authSlice';
+import { loginWithKeycloakCredentialsThunk } from '../store/slices/authSlice';
 import { showAlert } from '../utils/showAlert';
 
 interface Props {
@@ -26,7 +26,9 @@ export default function LoginModal({ visible, onClose }: Props) {
 
   const onLogin = async () => {
     try {
-      await dispatch(loginThunk({ email, password })).unwrap();
+      await dispatch(
+        loginWithKeycloakCredentialsThunk({ username: email, password }),
+      ).unwrap();
       onClose();
     } catch {
       showAlert('Error', 'Credenciales inválidas');

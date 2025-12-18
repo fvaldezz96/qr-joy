@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Alert, Button, Text, TextInput, View } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../../src/hook';
-import { loginThunk } from '../../src/store/slices/authSlice';
+import { loginWithKeycloakCredentialsThunk } from '../../src/store/slices/authSlice';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -30,7 +30,9 @@ export default function Login() {
     }
 
     try {
-      await dispatch(loginThunk({ email, password })).unwrap();
+      await dispatch(
+        loginWithKeycloakCredentialsThunk({ username: email, password }),
+      ).unwrap();
       router.replace('/');
     } catch (error) {
       setAttempts(attempts + 1);

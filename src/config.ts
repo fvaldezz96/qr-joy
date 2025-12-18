@@ -5,6 +5,14 @@ export const API_BASE_URL =
 export const APP_NAME = 'JoyPark';
 export const APP_VERSION = '1.0.0';
 
+// Configuración de Keycloak para el front
+// URL del endpoint de token del realm (por ejemplo:
+// http://localhost:8080/realms/joyrealm/protocol/openid-connect/token)
+export const KEYCLOAK_TOKEN_URL = process.env.EXPO_PUBLIC_KEYCLOAK_TOKEN_URL || '';
+
+// client_id registrado para este front o para la API que admite password grant
+export const KEYCLOAK_CLIENT_ID = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || 'joy-api';
+
 const join = (...parts: string[]) =>
   parts
     .filter(Boolean)
@@ -35,6 +43,7 @@ export const ENDPOINTS = {
     all: join(API_BASE_URL, '/users'),
   },
 
+  
   products: {
     base: join(API_BASE_URL, '/products'),
     byId: (id: string) => join(API_BASE_URL, `/products/${id}`),

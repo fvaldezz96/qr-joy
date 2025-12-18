@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "type": "module",
   "scripts": {
-    "start": "serve dist -s --listen 3000",
+    "start": "serve dist -s --listen 3001",
     "dev": "expo start --lan --clear",
     "dev:tunnel": "expo start --tunnel --clear",
     "android": "expo run:android",
