@@ -36,6 +36,7 @@
     "@gorhom/bottom-sheet": "^5.2.6",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@reduxjs/toolkit": "^2.2.3",
+    "ajv": "^8.17.1",
     "axios": "^1.7.2",
     "expo": "~54.0.30",
     "expo-apple-authentication": "~8.0.8",
