@@ -1,9 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
+
+WebBrowser.maybeCompleteAuthSession();
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../../src/hook';
-import { registerThunk } from '../../src/store/slices/authSlice';
+import { loginWithGoogleThunk, registerThunk } from '../../src/store/slices/authSlice';
 
 export default function Register() {
   const dispatch = useAppDispatch();
@@ -14,6 +19,26 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [cel, setCel] = useState('');
+
+  // Google OAuth
+  const [_request, _response, promptAsync] = Google.useIdTokenAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  });
+
+  const onGoogleRegister = async () => {
+    try {
+      const result = await promptAsync();
+      if (result.type === 'success' && result.params.id_token) {
+        await dispatch(loginWithGoogleThunk(result.params.id_token)).unwrap();
+        Alert.alert('Bienvenido', 'Cuenta creada con Google');
+        router.replace('/');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'No se pudo registrar con Google');
+    }
+  };
 
   const onRegister = async () => {
     if (!name || !email || !password || !cel) {
@@ -75,6 +100,19 @@ export default function Register() {
           <Text style={styles.primaryBtnText}>{loading ? 'Creando cuenta...' : 'Registrarse'}</Text>
         </TouchableOpacity>
 
+        {/* Separador */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>o registrate con</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Botón Google */}
+        <TouchableOpacity style={styles.googleBtn} onPress={onGoogleRegister} disabled={loading}>
+          <Ionicons name="logo-google" size={20} color="#fff" />
+          <Text style={styles.googleBtnText}>Continuar con Google</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/') }>
           <Text style={styles.secondaryBtnText}>Ya tengo cuenta, iniciar sesión</Text>
         </TouchableOpacity>
@@ -130,4 +168,38 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   secondaryBtnText: { color: '#9CA3AF', fontWeight: '600', fontSize: 14 },
+  
+  // Separador
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
+  },
+  dividerText: {
+    color: '#6B7280',
+    paddingHorizontal: 12,
+    fontSize: 13,
+  },
+  
+  // Botón Google
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DB4437',
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 10,
+    marginBottom: 8,
+  },
+  googleBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
 });

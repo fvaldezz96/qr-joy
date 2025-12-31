@@ -11,15 +11,20 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
+  Text, 
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
+
 import { useAppDispatch, useAppSelector } from '../src/hook';
-import { loginThunk, logout } from '../src/store/slices/authSlice';
+import { loginThunk, loginWithGoogleThunk, logout } from '../src/store/slices/authSlice';
 import logo from '../assets/IMG_1459.png';
 const { width } = Dimensions.get('window');
 
@@ -112,6 +117,13 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
 
+  // Google OAuth
+  const [_request, _response, promptAsync] = Google.useIdTokenAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  });
+
   const handleLogin = async () => {
     try {
       await dispatch(loginThunk({ email, password })).unwrap();
@@ -119,6 +131,19 @@ export default function Home() {
       Toast.show({ type: 'success', text1: '¡Bienvenido!', text2: user?.name || email });
     } catch {
       Toast.show({ type: 'error', text1: 'Error', text2: 'Credenciales inválidas' });
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await promptAsync();
+      if (result.type === 'success' && result.params.id_token) {
+        await dispatch(loginWithGoogleThunk(result.params.id_token)).unwrap();
+        setModalVisible(false);
+        Toast.show({ type: 'success', text1: '¡Bienvenido!', text2: 'Sesión iniciada con Google' });
+      }
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e?.message || 'No se pudo iniciar con Google' });
     }
   };
 
@@ -289,6 +314,20 @@ export default function Home() {
                 <Text style={styles.loginBtnText}>Entrar</Text>
               )}
             </TouchableOpacity>
+
+            {/* Separador */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>o continuar con</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Botón Google */}
+            <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin} disabled={loading}>
+              <Ionicons name="logo-google" size={20} color="#fff" />
+              <Text style={styles.googleBtnText}>Google</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={styles.cancelText}>Cancelar</Text>
             </TouchableOpacity>
@@ -528,6 +567,42 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   loginBtnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
+  
+  // Separador
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 8,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#444',
+  },
+  dividerText: {
+    color: '#888',
+    paddingHorizontal: 12,
+    fontSize: 13,
+  },
+  
+  // Botón Google
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DB4437',
+    padding: 14,
+    borderRadius: 16,
+    width: '100%',
+    gap: 10,
+  },
+  googleBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
   cancelText: { color: '#8B5CF6', textAlign: 'center', fontWeight: '600', marginTop: 8 },
   registerText: {
     color: '#FAD02C',

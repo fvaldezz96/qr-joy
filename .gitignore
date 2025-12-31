@@ -14,15 +14,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# === ANDROID / IOS ( solo si usás EAS) ===
+# === ANDROID / IOS (CNG/Prebuild) ===
 android/
 ios/
-!android/
-!android/**
-!ios/
-!ios/**
-# Expo cache (NUNCA subir)
-.expo/
-.expo-shared/
-dist/
 

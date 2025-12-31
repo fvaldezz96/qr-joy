@@ -113,6 +113,19 @@ export const loginWithKeycloakCredentialsThunk = createAsyncThunk(
   },
 );
 
+// ✅ Login con Google (envía idToken al backend)
+export const loginWithGoogleThunk = createAsyncThunk(
+  'auth/loginWithGoogle',
+  async (idToken: string) => {
+    const { data } = await api.post('/auth/google', { idToken });
+    const payload = data.data as { token: string; user: User };
+
+    await saveToken(payload.token);
+    setAuthToken(payload.token);
+    return payload;
+  },
+);
+
 // ✅ Registro de usuario (rol user por defecto en el backend)
 export const registerThunk = createAsyncThunk(
   'auth/register',
@@ -216,6 +229,19 @@ const slice = createSlice({
         s.user = a.payload.user;
       })
       .addCase(registerThunk.rejected, (s, a) => {
+        s.loading = false;
+        s.error = a.error.message;
+      })
+      .addCase(loginWithGoogleThunk.pending, (s) => {
+        s.loading = true;
+        s.error = undefined;
+      })
+      .addCase(loginWithGoogleThunk.fulfilled, (s, a: PayloadAction<{ token: string; user: User }>) => {
+        s.loading = false;
+        s.token = a.payload.token;
+        s.user = a.payload.user;
+      })
+      .addCase(loginWithGoogleThunk.rejected, (s, a) => {
         s.loading = false;
         s.error = a.error.message;
       })

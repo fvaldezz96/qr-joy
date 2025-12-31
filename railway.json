@@ -4,6 +4,6 @@
     "buildCommand": "npm ci --legacy-peer-deps && npm run build"
   },
   "start": {
-    "command": "npx serve dist -s --listen ${PORT:-3000}"
+    "command": "npx serve dist -s --listen ${PORT:-3001}"
   }
 }

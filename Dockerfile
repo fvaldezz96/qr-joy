@@ -27,5 +27,5 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN npm i -g serve
 COPY --from=build /app/dist ./dist
-EXPOSE 3000
-CMD ["sh", "-c", "serve dist -s --listen ${PORT:-3000}"]
+EXPOSE 3001
+CMD ["sh", "-c", "serve dist -s --listen ${PORT:-3001}"]
