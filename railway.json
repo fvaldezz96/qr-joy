@@ -1,9 +1,7 @@
 {
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "railpack",
-    "buildCommand": "npm ci --legacy-peer-deps && npm run build"
-  },
-  "start": {
-    "command": "npx serve dist -s --listen ${PORT:-3001}"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "qr/front/Dockerfile"
   }
 }
