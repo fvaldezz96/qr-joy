@@ -1,0 +1,2 @@
+[service.front]
+root = "."
