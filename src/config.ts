@@ -7,10 +7,10 @@ export const APP_VERSION = '1.0.0';
 
 // Configuración de Keycloak para el front
 // URL del endpoint de token del realm (por ejemplo:
-// http://localhost:8080/realms/joyrealm/protocol/openid-connect/token)
+// http://192.168.0.25:8080/realms/joyrealm/protocol/openid-connect/token)
 export const KEYCLOAK_TOKEN_URL = process.env.EXPO_PUBLIC_KEYCLOAK_TOKEN_URL || '';
 
-// Issuer OIDC del realm (por ejemplo: http://localhost:8080/realms/joyrealm)
+// Issuer OIDC del realm (por ejemplo: http://192.168.0.25:8080/realms/joyrealm)
 // Se usa para el login interactivo (Google / SSO) vía AuthSession.
 export const KEYCLOAK_ISSUER = process.env.EXPO_PUBLIC_KEYCLOAK_ISSUER || '';
 

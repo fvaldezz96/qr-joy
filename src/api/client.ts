@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config';
 // URL primaria (normalmente la API remota, definida vía EXPO_PUBLIC_API_BASE_URL)
 const PRIMARY_API_BASE_URL = API_BASE_URL?.replace(/\/+$/, '') || '';
 
-// URL secundaria/local para fallback (por ejemplo http://192.168.x.x:3001 o http://localhost:3001)
+// URL secundaria/local para fallback (por ejemplo http://192.168.x.x:3001 o http://192.168.0.25:3001)
 const LOCAL_API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL_LOCAL?.replace(/\/+$/, '') || '';
 
