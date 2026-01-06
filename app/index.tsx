@@ -289,7 +289,7 @@ export default function Home() {
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <Ionicons name="lock-closed" size={48} color="#8B5CF6" style={styles.modalIcon} />
-            <Text style={styles.modalTitle}>Iniciar Sesión</Text>
+            <Text style={styles.modalTitle}>Joy Wine</Text>
             <TextInput
               placeholder="Email"
               value={email}

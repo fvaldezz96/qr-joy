@@ -39,7 +39,7 @@ export default function LoginModal({ visible, onClose }: Props) {
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.modal}>
-          <Text style={styles.title}>Iniciar Sesión</Text>
+          <Text style={styles.title}>Joy Wine</Text>
           <TextInput
             placeholder="Email"
             value={email}

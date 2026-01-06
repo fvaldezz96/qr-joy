@@ -90,7 +90,7 @@ export default function Login() {
     }
 
     try {
-      const result = await promptAsync({ useProxy });
+      const result = await promptAsync();
       if (result.type !== 'success') {
         return;
       }
@@ -134,7 +134,7 @@ export default function Login() {
       }}
     >
       <Text style={{ fontSize: 32, fontWeight: '800', color: '#fff', textAlign: 'center' }}>
-        JoyPark
+        Joy Wine
       </Text>
 
       <View style={{
