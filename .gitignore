@@ -4,6 +4,10 @@
 dist/
 web-build/
 
+
+.env
+.env.production
+
 # === NODE ===
 node_modules/
 npm-debug.log*
