@@ -180,7 +180,7 @@ export default function Dashboard() {
           </View>
 
           {/* TICKETS */}
-          <View style={styles.section}>
+          {/* <View style={styles.section}>
             <Text style={styles.sectionTitle}>Entradas</Text>
             <View style={styles.metricsGrid}>
               <AnimatedMetric
@@ -216,7 +216,7 @@ export default function Dashboard() {
                 delay={400}
               />
             </View>
-          </View>
+          </View> */}
 
           {/* PRODUCTOS */}
           <View style={styles.section}>

@@ -22,9 +22,9 @@ export default function Register() {
 
   // Google OAuth
   const [_request, _response, promptAsync] = Google.useIdTokenAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'dummy-web-id',
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'dummy-ios-id',
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'dummy-android-id',
   });
 
   const onGoogleRegister = async () => {
@@ -113,7 +113,7 @@ export default function Register() {
           <Text style={styles.googleBtnText}>Continuar con Google</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/') }>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/')}>
           <Text style={styles.secondaryBtnText}>Ya tengo cuenta, iniciar sesión</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   secondaryBtnText: { color: '#9CA3AF', fontWeight: '600', fontSize: 14 },
-  
+
   // Separador
   divider: {
     flexDirection: 'row',
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 13,
   },
-  
+
   // Botón Google
   googleBtn: {
     flexDirection: 'row',

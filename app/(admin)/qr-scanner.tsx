@@ -172,7 +172,7 @@ export default function QrScanner() {
         <View style={styles.permissionBox}>
           <Ionicons name="videocam-off" size={60} color="#E53170" />
           <Text style={styles.permissionTitle}>Permiso de Cámara Requerido</Text>
-          <Text style={styles.permissionText}>Escanea QR para validar entradas</Text>
+          {/* <Text style={styles.permissionText}>Escanea QR para validar entradas</Text> */}
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
             <LinearGradient colors={['#FAD02C', '#FF6B9D']} style={styles.permissionButtonGradient}>
               <Ionicons name="camera" size={20} color="#000" />

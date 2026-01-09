@@ -31,6 +31,7 @@ export type UpsertProductDto = Omit<Product, '_id' | 'createdAt' | 'updatedAt'>;
 
 // === ADAPTER ===
 const productsAdapter = createEntityAdapter<Product>({
+  selectId: (product: any) => product._id,
   sortComparer: (a: Product, b: Product) => a.name.localeCompare(b.name),
 });
 
@@ -176,14 +177,14 @@ export const selectProductCreateError = (state: RootState) => state.products.cre
 
 export const selectProductsByCategory =
   (category: ProductCategory | 'all') =>
-  (state: RootState): Product[] => {
-    if (category === 'all') return selectAllProducts(state);
-    return selectAllProducts(state).filter((p) => p.category === category);
-  };
+    (state: RootState): Product[] => {
+      if (category === 'all') return selectAllProducts(state);
+      return selectAllProducts(state).filter((p) => p.category === category);
+    };
 
 export const selectLoadingByCategory =
   (category: ProductCategory | 'all') =>
-  (state: RootState): boolean =>
-    state.products.loadingByCategory[category];
+    (state: RootState): boolean =>
+      state.products.loadingByCategory[category];
 
 export default productsSlice.reducer;

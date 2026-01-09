@@ -11,7 +11,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text, 
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -91,7 +91,7 @@ function AnimatedCard({
 const USER_CARDS = [
   { href: '/(user)/products', icon: 'restaurant', color: '#FAD02C', label: 'Carta' },
   { href: '/(user)/my-qr', icon: 'qr-code', color: '#E53170', label: 'Ordenes' },
-  { href: '/(user)/my-tickets', icon: 'ticket', color: '#00AEEF', label: 'Entradas' },
+  // { href: '/(user)/my-tickets', icon: 'ticket', color: '#00AEEF', label: 'Entradas' },
 ] as const;
 
 const STAFF_CARDS = [
@@ -117,11 +117,11 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Google OAuth
+  // Google OAuth (Fallbacks to prevent crash)
   const [_request, _response, promptAsync] = Google.useIdTokenAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'dummy-web-id',
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'dummy-ios-id',
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'dummy-android-id',
   });
 
   const handleLogin = async () => {
@@ -135,6 +135,10 @@ export default function Home() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
+      Toast.show({ type: 'info', text1: 'Google Auth', text2: 'No configurado en este ambiente' });
+      return;
+    }
     try {
       const result = await promptAsync();
       if (result.type === 'success' && result.params.id_token) {
@@ -162,20 +166,25 @@ export default function Home() {
   return (
     <LinearGradient colors={['#0F0E17', '#1A0B2E', '#2A0B3A']} style={styles.gradientBg}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* HEADER CENTRADO */}
+        {/* HEADER */}
         <View style={styles.header}>
-          <Image source={logo} style={styles.logo} resizeMode="contain" />
-          {/* <Text style={styles.appName}>JOYWINE</Text> */}
-          <Text style={styles.season}>• Temporada Verano 2026 •</Text>
+          <View style={styles.logoContainer}>
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
+          </View>
+          <Text style={styles.appName}>JOYWINE</Text>
+          <Text style={styles.season}>• Summer Season 2026 •</Text>
 
-          {/* AVATAR */}
+          {/* AVATAR / LOGIN */}
           <TouchableOpacity style={styles.avatarButton} onPress={user ? toggleMenu : openLogin}>
             {user ? (
-              <View style={styles.avatar}>
+              <LinearGradient colors={['#8B5CF6', '#D946EF']} style={styles.avatar}>
                 <Text style={styles.avatarText}>{user.email[0].toUpperCase()}</Text>
-              </View>
+              </LinearGradient>
             ) : (
-              <Ionicons name="person-circle-outline" size={42} color="#8B5CF6" />
+              <View style={styles.loginGhostBtn}>
+                <Ionicons name="person-outline" size={24} color="#8B5CF6" />
+                <Text style={styles.loginGhostText}>Entrar</Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
@@ -339,6 +348,7 @@ export default function Home() {
           </View>
         </View>
       </Modal>
+      <Toast />
     </LinearGradient>
   );
 }
@@ -358,51 +368,70 @@ const styles = StyleSheet.create({
   // HEADER
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 48,
     position: 'relative',
     width: '100%',
   },
+  logoContainer: {
+    padding: 12,
+    borderRadius: 60,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    shadowColor: '#8B5CF6',
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+    marginBottom: 16,
+  },
   logo: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
     borderRadius: 50,
-    padding: 8,
-    shadowColor: '#FAD02C',
-    shadowOpacity: 0.4,
-    elevation: 15,
   },
   appName: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: '900',
-    color: '#FAD02C',
-    letterSpacing: 2,
-    marginTop: 12,
-    textShadowColor: '#FAD02C60',
-    textShadowRadius: 12,
+    color: '#fff',
+    letterSpacing: 4,
+    textShadowColor: 'rgba(139, 92, 246, 0.8)',
+    textShadowRadius: 15,
   },
   season: {
-    fontSize: 15,
-    color: '#A7A9BE',
-    marginTop: 8,
-    fontStyle: 'italic',
+    fontSize: 16,
+    color: '#8B5CF6',
+    marginTop: 4,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   avatarButton: {
     position: 'absolute',
-    top: 0,
+    top: -10,
     right: 0,
-    padding: 8,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#8B5CF6',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
+    elevation: 10,
   },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 20 },
+  avatarText: { color: '#fff', fontWeight: '900', fontSize: 20 },
+  loginGhostBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    gap: 8,
+  },
+  loginGhostText: { color: '#8B5CF6', fontWeight: '700', fontSize: 14 },
+
   avatarSmall: {
     width: 40,
     height: 40,
@@ -418,51 +447,56 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 100,
     right: 16,
-    backgroundColor: '#1A1A2E',
-    borderRadius: 20,
-    padding: 16,
-    width: 260,
-    elevation: 25,
+    backgroundColor: 'rgba(26, 26, 46, 0.95)',
+    borderRadius: 24,
+    padding: 20,
+    width: 280,
+    elevation: 30,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     zIndex: 100,
-    ...Platform.select({
-      web: { backdropFilter: 'blur(12px)' },
-    }),
   },
-  menuHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  menuName: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  menuEmail: { color: '#A7A9BE', fontSize: 13 },
+  menuHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  menuName: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  menuEmail: { color: '#A7A9BE', fontSize: 14 },
   roleBadge: {
     backgroundColor: '#333',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
-    marginTop: 4,
+    marginTop: 6,
   },
   adminBadge: { backgroundColor: '#8B5CF6' },
-  roleText: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  menuItemText: { color: '#FF3B30', fontWeight: '600' },
+  roleText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    marginTop: 8,
+  },
+  menuItemText: { color: '#FF3B30', fontWeight: '700', fontSize: 16 },
 
   // SECCIONES
   sectionTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
     color: '#FAD02C',
-    marginTop: 32,
-    marginBottom: 20,
+    marginTop: 40,
+    marginBottom: 24,
     textAlign: 'center',
-    textShadowColor: '#FAD02C50',
-    textShadowRadius: 12,
+    textShadowColor: 'rgba(250, 208, 44, 0.3)',
+    textShadowRadius: 10,
   },
 
   // GRIDS
   userGrid: {
     width: '100%',
-    maxWidth: 400,
-    gap: 24,
+    maxWidth: 450,
+    gap: 32,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -471,60 +505,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 16,
-    marginBottom: 32,
+    gap: 20,
+    marginBottom: 40,
     width: '100%',
-    maxWidth: 500,
+    maxWidth: 600,
   },
 
   // CARDS
   cardWrapper: {
     width: '100%',
-    minWidth: 140,
-    maxWidth: 160,
+    minWidth: 150,
+    maxWidth: 180,
     flex: 1,
   },
   cardLarge: {
-    minWidth: 280,
-    maxWidth: 320,
+    minWidth: '100%',
+    maxWidth: 400,
   },
   cardGradient: {
-    borderRadius: 24,
+    borderRadius: 30,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   cardInner: {
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    minHeight: 120,
   },
   iconCircle: {
     position: 'absolute',
-    top: -12,
-    right: -12,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    opacity: 0.4,
+    top: -10,
+    right: -10,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    opacity: 0.2,
   },
   iconGlow: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 15,
+    shadowRadius: 25,
+    elevation: 20,
   },
-  cardText: { fontSize: 16, fontWeight: '700', marginTop: 8, textAlign: 'center' },
-  cardTextLarge: { fontSize: 24, fontWeight: '800', marginTop: 16, textAlign: 'center' },
+  cardText: { fontSize: 18, fontWeight: '800', marginTop: 12, color: '#fff' },
+  cardTextLarge: { fontSize: 28, fontWeight: '900', marginTop: 16, textAlign: 'center' },
   cardTextWhite: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 8,
+    fontSize: 17,
+    fontWeight: '800',
+    marginTop: 10,
     color: '#fff',
     textAlign: 'center',
   },
@@ -532,70 +567,77 @@ const styles = StyleSheet.create({
   // MODAL
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
+    backgroundColor: 'rgba(0,0,0,0.95)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modal: {
     backgroundColor: '#1A1A2E',
     padding: 32,
-    borderRadius: 28,
-    width: '88%',
-    maxWidth: 380,
-    gap: 18,
-    elevation: 25,
+    borderRadius: 32,
+    width: '90%',
+    maxWidth: 400,
+    gap: 20,
+    elevation: 30,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   modalIcon: { marginBottom: 8 },
-  modalTitle: { fontSize: 28, fontWeight: '800', color: '#fff', textAlign: 'center' },
+  modalTitle: { fontSize: 32, fontWeight: '900', color: '#fff', textAlign: 'center' },
   input: {
-    backgroundColor: '#2A2A3E',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     color: '#fff',
-    padding: 16,
+    padding: 18,
     borderRadius: 16,
     fontSize: 16,
     width: '100%',
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   loginBtn: {
     backgroundColor: '#8B5CF6',
-    padding: 16,
+    padding: 18,
     borderRadius: 16,
     alignItems: 'center',
     width: '100%',
     marginTop: 8,
+    shadowColor: '#8B5CF6',
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 10,
   },
-  loginBtnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
-  
-  // Separador
+  loginBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginVertical: 8,
+    marginVertical: 12,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#444',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   dividerText: {
-    color: '#888',
-    paddingHorizontal: 12,
-    fontSize: 13,
+    color: '#666',
+    paddingHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '600',
   },
-  
-  // Botón Google
+
   googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DB4437',
-    padding: 14,
+    backgroundColor: 'rgba(219, 68, 55, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(219, 68, 55, 0.4)',
+    padding: 16,
     borderRadius: 16,
     width: '100%',
-    gap: 10,
+    gap: 12,
   },
   googleBtnText: {
     color: '#fff',
@@ -603,26 +645,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  cancelText: { color: '#8B5CF6', textAlign: 'center', fontWeight: '600', marginTop: 8 },
+  cancelText: { color: '#8B5CF6', textAlign: 'center', fontWeight: '700', marginTop: 12, fontSize: 16 },
   registerText: {
     color: '#FAD02C',
     textAlign: 'center',
-    fontWeight: '600',
-    marginTop: 12,
-    textDecorationLine: 'underline',
+    fontWeight: '800',
+    marginTop: 16,
+    fontSize: 15,
   },
 
   // FOOTER
   footer: {
-    marginTop: 60,
-    paddingVertical: 24,
+    marginTop: 80,
+    paddingVertical: 32,
     alignItems: 'center',
     width: '100%',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   footerText: {
-    fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
+    fontSize: 14,
+    color: '#444',
+    fontWeight: '600',
+    letterSpacing: 1,
     textAlign: 'center',
   },
 });
