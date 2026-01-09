@@ -18,7 +18,7 @@ function AuthBootstrapper() {
     setAuthToken(token ?? null);
   }, [token]);
 
-  return null;
+  return <Slot />;
 }
 
 export default function RootLayout() {
@@ -34,7 +34,6 @@ export default function RootLayout() {
           persistor={persistor}
         >
           <AuthBootstrapper />
-          <Slot />
           <Toast />
         </PersistGate>
       </Provider>

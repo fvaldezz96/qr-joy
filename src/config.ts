@@ -1,6 +1,15 @@
+// Detectar si estamos en producción
+const isProduction = process.env.NODE_ENV === 'production' || 
+  window?.location?.hostname?.includes('railway.app');
+
+// URLs de producción de Railway
+const PRODUCTION_API_URL = 'https://qrjoy-api-production.up.railway.app';
+const PRODUCTION_KEYCLOAK_URL = 'https://kcloud-keycloak-production.up.railway.app';
+
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') ||
-  '';
+  isProduction 
+    ? PRODUCTION_API_URL
+    : process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') || 'http://192.168.0.25:3001';
 
 export const APP_NAME = 'JoyPark';
 export const APP_VERSION = '1.0.0';
@@ -8,11 +17,15 @@ export const APP_VERSION = '1.0.0';
 // Configuración de Keycloak para el front
 // URL del endpoint de token del realm (por ejemplo:
 // http://192.168.0.25:8080/realms/joyrealm/protocol/openid-connect/token)
-export const KEYCLOAK_TOKEN_URL = process.env.EXPO_PUBLIC_KEYCLOAK_TOKEN_URL || '';
+export const KEYCLOAK_TOKEN_URL = isProduction 
+  ? `${PRODUCTION_KEYCLOAK_URL}/realms/joywine/protocol/openid-connect/token`
+  : process.env.EXPO_PUBLIC_KEYCLOAK_TOKEN_URL || '';
 
 // Issuer OIDC del realm (por ejemplo: http://192.168.0.25:8080/realms/joyrealm)
 // Se usa para el login interactivo (Google / SSO) vía AuthSession.
-export const KEYCLOAK_ISSUER = process.env.EXPO_PUBLIC_KEYCLOAK_ISSUER || '';
+export const KEYCLOAK_ISSUER = isProduction
+  ? `${PRODUCTION_KEYCLOAK_URL}/realms/joywine`
+  : process.env.EXPO_PUBLIC_KEYCLOAK_ISSUER || '';
 
 // client_id registrado para este front o para la API que admite password grant
 export const KEYCLOAK_CLIENT_ID = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || 'joy-api';

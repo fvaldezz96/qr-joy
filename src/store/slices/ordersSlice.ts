@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 import api from '../../api/client';
-import socketService from '../../services/socketService';
+
 import type { RootState } from '..';
 
 export interface OrderPayResponse {
@@ -81,7 +81,7 @@ export const payMockOrder = createAsyncThunk('orders/payMock', async (orderId: s
   try {
     const { data } = await api.post(`/orders/${orderId}/pay-mock`);
     return data.data as OrderPayResponse;
-    
+
   } catch (error: any) {
     console.error('Error paying order:', error);
     throw new Error(error.response?.data?.message || 'Error paying order');
@@ -235,12 +235,12 @@ const slice = createSlice({
   },
 });
 
-export const { 
-  resetOrder, 
-  clearOrders, 
-  orderCreatedRealtime, 
-  orderUpdatedRealtime, 
-  orderStatusChangedRealtime, 
-  orderDeletedRealtime 
+export const {
+  resetOrder,
+  clearOrders,
+  orderCreatedRealtime,
+  orderUpdatedRealtime,
+  orderStatusChangedRealtime,
+  orderDeletedRealtime
 } = slice.actions;
 export default slice.reducer;

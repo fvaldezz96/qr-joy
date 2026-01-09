@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -159,33 +159,20 @@ export default function Home() {
             <Text style={styles.sectionTitle}>{isAdmin ? 'CONTROL CENTRAL' : 'OPERACIONES'}</Text>
             <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
               {[
-                { href: '/(admin)/comandas', icon: 'fast-food-outline', color: '#00ffaa' },
-                { href: '/(admin)/qr-scanner', icon: 'scan-outline', color: '#ffff00' },
-                { href: '/(admin)/tables', icon: 'grid-outline', color: '#ff6600' },
-                { href: '/(admin)/vip-list', icon: 'star-outline', color: '#ff00ff' },
+                { href: '/(admin)/comandas', icon: 'fast-food-outline', color: '#00ffaa', label: 'COMANDAS' },
+                { href: '/(admin)/qr-scanner', icon: 'scan-outline', color: '#ffff00', label: 'ESCANEAR QR' },
+                { href: '/(admin)/tables', icon: 'grid-outline', color: '#ff6600', label: 'MESAS' },
+                { href: '/(admin)/vip-list', icon: 'star-outline', color: '#ff00ff', label: 'VIP LIST' },
               ].map((card) => (
-                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label || ''} small />
+                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label} small />
               ))}
             </View>
           </>
         )}
 
         {/* ADMIN SECTION */}
-        {isAdmin && (
-          <>
-            <Text style={styles.sectionTitle}>ADMINISTRACIÓN</Text>
-            <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
-              {[
-                { href: '/(admin)/dashboard', icon: 'trending-up-outline', color: '#ff3399' },
-                { href: '/(admin)/orders-screen', icon: 'receipt-outline', color: '#33ccff' },
-                { href: '/(admin)/products', icon: 'pricetag-outline', color: '#00ff88' },
-                { href: '/(admin)/staff', icon: 'people-outline', color: '#aa00ff' },
-              ].map((card) => (
-                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label || ''} small />
-              ))}
-            </View>
-          </>
-        )}
+        <Text style={styles.sectionTitle}>ADMINISTRACIÓN</Text>
+
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>© 2026 JOYWINE NIGHTCLUB • ALL RIGHTS RESERVED</Text>
@@ -419,6 +406,7 @@ const styles = StyleSheet.create({
     fontSize: isDesktop ? 48 : isTablet ? 40 : 36,
     fontWeight: '900',
     color: '#ff00aa',
+    paddingVertical: 20,
     marginVertical: 40,
     textShadowColor: '#ff00aa',
     textShadowRadius: 15,
