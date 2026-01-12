@@ -21,6 +21,7 @@ import { clearCart, removeFromCart } from '../../src/store/slices/cartSlice';
 import { confirmMpPayment, createMpPayment, createOrder, payMockOrder } from '../../src/store/slices/ordersSlice';
 import { fetchTables, selectActiveTables } from '../../src/store/slices/tablesSlice';
 import { showAlert } from '../../src/utils/showAlert';
+import LoginModal from '../../src/components/LoginModal';
 
 export default function Cart() {
   const router = useRouter();
@@ -35,6 +36,8 @@ export default function Cart() {
   const [step, setStep] = useState<'cart' | 'qr'>('cart');
   const [displayTotal, setDisplayTotal] = useState(total);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
+
   const DEMO_INTERNAL_EMAILS = [
     'demo@demo.com',
     'admin@demo.com',
@@ -43,12 +46,7 @@ export default function Cart() {
   ];
   const isInternalDemoUser = !!user && DEMO_INTERNAL_EMAILS.includes(user.email);
 
-  // === REDIRECCIÓN SI NO HAY USUARIO ===
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login');
-    }
-  }, [user, authLoading, router]);
+  // === REDIRECCIÓN ELIMINADA (Para permitir ver el carrito sin loguearse) ===
 
   // === ANIMAR TOTAL ===
   const totalAnim = useRef(new Animated.Value(0)).current;
@@ -80,7 +78,10 @@ export default function Cart() {
 
   const validateBeforePay = () => {
     if (!items.length) return showAlert('Carrito vacío', 'Agregá productos antes de pagar.');
-    if (!user?._id) return showAlert('Error', 'Debes iniciar sesión');
+    if (!user?._id) {
+      setLoginModalVisible(true);
+      return false;
+    }
     if (!selectedTableId) return showAlert('Error', 'Seleccioná una mesa antes de continuar');
     return true;
   };
@@ -324,6 +325,7 @@ export default function Cart() {
           </>
         )}
       </ScrollView>
+      <LoginModal visible={loginModalVisible} onClose={() => setLoginModalVisible(false)} />
     </LinearGradient>
   );
 }

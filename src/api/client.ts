@@ -145,6 +145,21 @@ class ApiClient {
     }
   }
 
+  // Método específico para registro con fallback a Sistema A
+  public async registerToSystemA(data: any) {
+    try {
+      if (!this.fallbackInstance) {
+        throw new Error('Fallback instance not configured (SYSTEM_A_API_URL match API_BASE_URL or is invalid)');
+      }
+      // System 1 espera: { email, password, name, userType: 'comprador', surname? }
+      const response = await this.fallbackInstance.post('/api/user', data);
+      return response.data;
+    } catch (error) {
+      console.error('[Register] Error al intentar registro en Sistema A:', error);
+      throw error;
+    }
+  }
+
   public setAuthToken(token: string | null) {
     if (token) {
       this.instance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -190,6 +205,7 @@ export const deleteMethod = apiClientInstance.delete.bind(apiClientInstance);
 export const setAuthToken = apiClientInstance.setAuthToken.bind(apiClientInstance);
 export const clearAuthToken = apiClientInstance.clearAuthToken.bind(apiClientInstance);
 export const loginToSystemA = apiClientInstance.loginToSystemA.bind(apiClientInstance);
+export const registerToSystemA = apiClientInstance.registerToSystemA.bind(apiClientInstance);
 export const getBaseURL = apiClientInstance.getBaseURL.bind(apiClientInstance);
 export const getFallbackBaseURL = apiClientInstance.getFallbackBaseURL.bind(apiClientInstance);
 export const getEnvironment = apiClientInstance.getEnvironment.bind(apiClientInstance);

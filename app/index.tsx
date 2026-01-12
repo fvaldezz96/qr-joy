@@ -1,33 +1,32 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
-import { useRef, useState } from 'react';
+import { Link, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
   Dimensions,
   Image,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+
+import { useAppDispatch, useAppSelector } from '../src/hook';
+import { logout } from '../src/store/slices/authSlice';
+import logo from '../assets/IMG_1459.png';
+import { addToCart } from '../src/store/slices/cartSlice';
+import { fetchProducts, selectAllProducts, selectProductsLoading, Product } from '../src/store/slices/productsSlice';
+import LoginModal from '../src/components/LoginModal';
 
 WebBrowser.maybeCompleteAuthSession();
 
-import { useAppDispatch, useAppSelector } from '../src/hook';
-import { loginThunk, loginWithGoogleThunk, logout } from '../src/store/slices/authSlice';
-import logo from '../assets/IMG_1459.png';
-
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 const isMobile = width < 768;
 const isTablet = width >= 768 && width < 1200;
@@ -35,47 +34,32 @@ const isDesktop = width >= 1200;
 
 export default function Home() {
   const dispatch = useAppDispatch();
-  const { user, loading } = useAppSelector((s) => s.auth);
+  const router = useRouter();
+
+  // Auth State
+  const { user } = useAppSelector((s) => s.auth);
   const isAdmin = user?.role === 'admin';
   const isStaff = user?.role === 'admin' || user?.role === 'employee';
 
+  // Products State
+  const products = useAppSelector(selectAllProducts);
+  const productsLoading = useAppSelector(selectProductsLoading);
+  const cartItems = useAppSelector((s) => s.cart.items);
+  const cartCount = cartItems.reduce((sum, i) => sum + i.qty, 0);
+
+  // UI State
   const [modalVisible, setModalVisible] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'drink' | 'food'>('all');
 
-  const [_request, _response, promptAsync] = Google.useIdTokenAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'dummy',
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'dummy',
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'dummy',
-  });
+  // Load Products
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
-  const handleLogin = async () => {
-    try {
-      await dispatch(loginThunk({ email, password })).unwrap();
-      setModalVisible(false);
-      Toast.show({ type: 'success', text1: 'Acceso concedido', text2: `Bienvenido ${user?.name || email}` });
-    } catch {
-      Toast.show({ type: 'error', text1: 'Acceso denegado', text2: 'Credenciales inválidas' });
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    if (!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
-      Toast.show({ type: 'info', text1: 'Google', text2: 'No disponible en este entorno' });
-      return;
-    }
-    try {
-      const result = await promptAsync();
-      if (result.type === 'success' && result.params.id_token) {
-        await dispatch(loginWithGoogleThunk(result.params.id_token)).unwrap();
-        setModalVisible(false);
-        Toast.show({ type: 'success', text1: 'Login con Google', text2: 'Sesión iniciada' });
-      }
-    } catch (e: any) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo iniciar con Google' });
-    }
-  };
+  const filteredProducts = products
+    .filter((p) => p.category !== 'ticket')
+    .filter((p) => filter === 'all' || p.category === filter);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -91,16 +75,14 @@ export default function Home() {
 
   return (
     <LinearGradient colors={['#0a001f', '#1a0033', '#2d0055']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.logoGlow}>
             <Image source={logo} style={styles.logo} resizeMode="contain" />
           </View>
-          {/* <Text style={styles.title}>JOYWINE</Text>
-          <Text style={styles.subtitle}>NIGHTCLUB • SUMMER 2026</Text> */}
 
-          {/* USER AVATAR / LOGIN */}
+          {/* USER AVATAR / LOGIN BUTTON */}
           <TouchableOpacity style={styles.userButton} onPress={user ? toggleMenu : openLogin}>
             {user ? (
               <LinearGradient colors={['#ff00aa', '#aa00ff']} style={styles.avatar}>
@@ -109,7 +91,7 @@ export default function Home() {
             ) : (
               <View style={styles.loginBtn}>
                 <Ionicons name="person-outline" size={20} color="#e0aaff" />
-                <Text style={styles.loginText}>VIP ACCESS</Text>
+                <Text style={styles.loginText}>ACCESO VIP</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -124,477 +106,323 @@ export default function Home() {
               </LinearGradient>
               <View>
                 <Text style={styles.menuName}>{user?.name || 'VIP Guest'}</Text>
-                <Text style={styles.menuEmail}>{user?.email}</Text>
+                <Text style={styles.menuEmail}>{(user?.email || '').substring(0, 20)}...</Text>
                 <View style={[styles.roleBadge, isAdmin && styles.adminBadge]}>
                   <Text style={styles.roleText}>{(user?.role || 'guest').toUpperCase()}</Text>
                 </View>
               </View>
             </View>
+
+            {/* Staff Shortcuts */}
+            {isStaff && (
+              <>
+                <Link href="/(admin)/dashboard" asChild>
+                  <TouchableOpacity style={styles.menuItem}>
+                    <Ionicons name="apps-outline" size={22} color="#00ffff" />
+                    <Text style={[styles.menuItemText, { color: '#00ffff' }]}>Panel Admin</Text>
+                  </TouchableOpacity>
+                </Link>
+                <Link href="/(admin)/qr-scanner" asChild>
+                  <TouchableOpacity style={styles.menuItem}>
+                    <Ionicons name="scan-outline" size={22} color="#00ffaa" />
+                    <Text style={[styles.menuItemText, { color: '#00ffaa' }]}>Escanear QR</Text>
+                  </TouchableOpacity>
+                </Link>
+                <Link href="/(admin)/comandas" asChild>
+                  <TouchableOpacity style={styles.menuItem}>
+                    <Ionicons name="fast-food-outline" size={22} color="#ffff00" />
+                    <Text style={[styles.menuItemText, { color: '#ffff00' }]}>Comandas</Text>
+                  </TouchableOpacity>
+                </Link>
+                <View style={styles.menuDivider} />
+              </>
+            )}
+
+            <Link href="/(user)/orders" asChild>
+              <TouchableOpacity style={styles.menuItem}>
+                <Ionicons name="receipt-outline" size={22} color="#ffaa00" />
+                <Text style={[styles.menuItemText, { color: '#ffaa00' }]}>Mis Órdenes</Text>
+              </TouchableOpacity>
+            </Link>
+            <Link href="/(user)/my-qr" asChild>
+              <TouchableOpacity style={styles.menuItem}>
+                <Ionicons name="qr-code-outline" size={22} color="#00ffff" />
+                <Text style={[styles.menuItemText, { color: '#00ffff' }]}>Mis QRs</Text>
+              </TouchableOpacity>
+            </Link>
+
+            <View style={styles.menuDivider} />
+
             <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={22} color="#ff3366" />
-              <Text style={styles.menuItemText}>Salir</Text>
+              <Text style={styles.menuItemText}>Cerrar Sesión</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
 
-        {/* GUEST SECTION - MOSTRAR SIEMPRE PARA CLIENTES */}
-        {!user && (
-          <>
-            <Text style={styles.sectionTitle}>EXPERIENCIA VIP</Text>
-            <View style={[styles.guestGrid, isTablet && styles.guestGridTablet, isDesktop && styles.guestGridDesktop]}>
-              {[
-                { href: '/(user)/products', icon: 'wine', color: '#ff3366', label: 'BOTELLAS & CARTA' },
-                { href: '/(user)/my-qr', icon: 'qr-code', color: '#00ffff', label: 'RESERVAS & QR' },
-                { href: '/(user)/events', icon: 'musical-notes', color: '#ffaa00', label: 'EVENTOS HOY' },
-              ].map((card) => (
-                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label} />
-              ))}
-            </View>
-          </>
-        )}
+        {/* === ACCESOS RÁPIDOS === */}
+        {user && (
+          <View style={styles.quickAccessContainer}>
+            <Link href="/(user)/my-qr" asChild>
+              <TouchableOpacity style={styles.quickAccessButton}>
+                <LinearGradient colors={['#00ffaa', '#00aa77']} style={styles.quickAccessGradient}>
+                  <Ionicons name="qr-code-outline" size={24} color="#003322" />
+                  <Text style={styles.quickAccessText}>Mis QRs Activos</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Link>
 
-        {/* LOGGED USER SECTION */}
-        {user && !isStaff && (
-          <>
-            <Text style={styles.sectionTitle}>MI EXPERIENCIA</Text>
-            <View style={[styles.guestGrid, isTablet && styles.guestGridTablet, isDesktop && styles.guestGridDesktop]}>
-              {[
-                { href: '/(user)/products', icon: 'wine', color: '#ff3366', label: 'BOTELLAS & CARTA' },
-                { href: '/(user)/my-qr', icon: 'qr-code', color: '#00ffff', label: 'MIS QR' },
-                { href: '/(user)/orders', icon: 'receipt-outline', color: '#ffaa00', label: 'MIS ÓRDENES' },
-              ].map((card) => (
-                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label} />
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* STAFF SECTION */}
-        {isStaff && (
-          <>
-            <Text style={styles.sectionTitle}>{isAdmin ? 'CONTROL CENTRAL' : 'OPERACIONES'}</Text>
-            <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
-              {[
-                { href: '/(admin)/comandas', icon: 'fast-food-outline', color: '#00ffaa', label: 'COMANDAS' },
-                { href: '/(admin)/qr-scanner', icon: 'scan-outline', color: '#ffff00', label: 'ESCANEAR QR' },
-                { href: '/(admin)/tables', icon: 'grid-outline', color: '#ff6600', label: 'MESAS' },
-                { href: '/(admin)/vip-list', icon: 'star-outline', color: '#ff00ff', label: 'VIP LIST' },
-              ].map((card) => (
-                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label} small />
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* ADMIN SECTION - SOLO PARA ADMIN */}
-        {isAdmin && (
-          <>
-            <Text style={styles.sectionTitle}>ADMINISTRACIÓN</Text>
-            <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
-              {[
-                { href: '/(admin)/products', icon: 'restaurant-outline', color: '#ff3366', label: 'CARTA DE PRODUCTOS' },
-                { href: '/(admin)/orders-screen', icon: 'list-outline', color: '#00ffff', label: 'ÓRDENES' },
-                { href: '/(admin)/dashboard', icon: 'bar-chart-outline', color: '#ffaa00', label: 'DASHBOARD' },
-                { href: '/(admin)/stock', icon: 'cube-outline', color: '#00ff00', label: 'STOCK' },
-              ].map((card) => (
-                <NeonCard key={card.href} href={card.href} color={card.color} icon={card.icon} label={card.label} small />
-              ))}
-            </View>
-          </>
-        )}
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}> 2026 JOYWINE NIGHTCLUB • ALL RIGHTS RESERVED</Text>
-          <Text style={styles.footerSub}>San Juan • Argentina</Text>
-        </View>
-      </ScrollView>
-
-      {/* LOGIN MODAL */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Ionicons name="diamond" size={60} color="#ff00aa" style={{ marginBottom: 16 }} />
-            <Text style={styles.modalTitle}>JOYWINE</Text>
-            <Text style={styles.modalSubtitle}>Acceso Exclusivo</Text>
-
-            <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-            <TextInput placeholder="Contraseña" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
-
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>INGRESAR</Text>}
-            </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={styles.line} />
-              <Text style={styles.dividerText}>o</Text>
-              <View style={styles.line} />
-            </View>
-
-            <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
-              <Ionicons name="logo-google" size={20} color="#fff" />
-              <Text style={styles.googleText}>Continuar con Google</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
-
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.registerText}>¿Primera vez? Solicitar acceso VIP</Text>
+            <Link href="/(user)/orders" asChild>
+              <TouchableOpacity style={styles.quickAccessButton}>
+                <LinearGradient colors={['#aa00ff', '#7700aa']} style={styles.quickAccessGradient}>
+                  <Ionicons name="receipt-outline" size={24} color="#fff" />
+                  <Text style={[styles.quickAccessText, { color: '#fff' }]}>Mis Consumos</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </Link>
           </View>
+        )}
+
+        {/* === FILTROS DE LA CARTA === */}
+        <View style={styles.filterSection}>
+          <Text style={styles.sectionTitle}>CARTA DIGITAL</Text>
+          <View style={styles.filterContainer}>
+            <FilterButton label="Todo" active={filter === 'all'} onPress={() => setFilter('all')} color="#8B5CF6" />
+            <FilterButton label="Bebida" icon="wine" active={filter === 'drink'} onPress={() => setFilter('drink')} color="#8B5CF6" />
+            <FilterButton label="Comida" icon="fast-food" active={filter === 'food'} onPress={() => setFilter('food')} color="#F59E0B" />
+          </View>
         </View>
-      </Modal>
+
+        {/* === LISTA DE PRODUCTOS === */}
+        {productsLoading ? (
+          <ActivityIndicator size="large" color="#aa00ff" style={{ marginTop: 40 }} />
+        ) : filteredProducts.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>No hay productos disponibles</Text>
+          </View>
+        ) : (
+          <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+            {filteredProducts.map((item, i) => (
+              <ProductCard key={item._id} product={item} index={i} />
+            ))}
+          </View>
+        )}
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}> 2026 JOYWINE NIGHTCLUB • SAN JUAN</Text>
+        </View>
+      </ScrollView>
+
+      {/* FAB CARRITO */}
+      <Link href="/(user)/cart" asChild>
+        <TouchableOpacity style={styles.fab}>
+          <LinearGradient colors={['#aa00ff', '#ff00aa']} style={styles.fabGradient}>
+            <Ionicons name="cart" size={28} color="#fff" />
+            {cartCount > 0 && (
+              <View style={styles.fabBadge}>
+                <Text style={styles.fabBadgeText}>{cartCount}</Text>
+              </View>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Link>
+
+      {/* LOGIN MODAL */}
+      <LoginModal visible={modalVisible} onClose={() => setModalVisible(false)} />
 
       <Toast />
     </LinearGradient>
   );
 }
 
-// === NEON CARD COMPONENT ===
-function NeonCard({ href, color, icon, label, small = false }: {
-  href: string;
-  color: string;
-  icon: any;
-  label: string;
-  small?: boolean;
-}) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const opacity = useRef(new Animated.Value(0.8)).current;
+// === COMPONENTES AUXILIARES ===
 
-  const animateIn = () => Animated.parallel([
-    Animated.spring(scale, { toValue: 1.08, useNativeDriver: true }),
-    Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true })
-  ]).start();
-
-  const animateOut = () => Animated.parallel([
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
-    Animated.timing(opacity, { toValue: 0.8, duration: 200, useNativeDriver: true })
-  ]).start();
-
+function FilterButton({ label, icon, active, onPress, color }: { label: string; icon?: string; active: boolean; onPress: () => void; color: string }) {
   return (
-    <Link href={href} style={{ flex: small ? undefined : 1 }}>
-      {isWeb ? (
-        <Animated.View style={[
-          styles.neonCard,
-          small && styles.neonCardSmall,
-          { transform: [{ scale }], opacity }
-        ]}>
-          <Pressable
-            onPressIn={animateIn}
-            onPressOut={animateOut}
-            onHoverIn={isWeb ? animateIn : undefined}
-            onHoverOut={isWeb ? animateOut : undefined}
-            style={StyleSheet.absoluteFill}
-          >
-            <LinearGradient
-              colors={[color + '20', color + '40']}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <View style={[styles.glowEffect, { shadowColor: color }]} />
-            <Ionicons name={icon} size={small ? 36 : 56} color={color} />
-            {label && <Text style={[styles.cardLabel, { color }]}>{label}</Text>}
-          </Pressable>
-        </Animated.View>
-      ) : (
-        <Animated.View
-          onTouchStart={animateIn}
-          onTouchEnd={animateOut}
-          style={[
-            styles.neonCard,
-            small && styles.neonCardSmall,
-            { transform: [{ scale }], opacity }
-          ]}
-        >
-          <LinearGradient
-            colors={[color + '20', color + '40']}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          <View style={[styles.glowEffect, { shadowColor: color }]} />
-          <Ionicons name={icon} size={small ? 36 : 56} color={color} />
-          {label && <Text style={[styles.cardLabel, { color }]}>{label}</Text>}
-        </Animated.View>
-      )}
-    </Link>
+    <TouchableOpacity
+      style={[styles.filterButton, active && { backgroundColor: color + '30', borderColor: color }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <LinearGradient
+        colors={active ? [color, color + 'E6'] : ['transparent', 'transparent']}
+        style={styles.filterGradient}
+      >
+        {icon && <Ionicons name={icon as any} size={18} color={active ? '#fff' : color} />}
+        <Text style={[styles.filterText, active && { color: '#fff', fontWeight: '800' }, !active && { color }]}>
+          {label}
+        </Text>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 }
+
+function ProductCard({ product, index }: { product: Product; index: number }) {
+  const dispatch = useAppDispatch();
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, { toValue: 1, friction: 8, delay: index * 60, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 400, delay: index * 60, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const handleAdd = () => {
+    Animated.sequence([
+      Animated.spring(scaleAnim, { toValue: 0.95, friction: 5, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 5, useNativeDriver: true }),
+    ]).start();
+    dispatch(addToCart({ product }));
+    Toast.show({ type: 'success', text1: 'Agregado', text2: product.name, visibilityTime: 1500 });
+  };
+
+  const categoryMap = {
+    drink: { icon: 'wine', color: '#8B5CF6', label: 'Bebida' },
+    food: { icon: 'fast-food', color: '#F59E0B', label: 'Comida' },
+    ticket: { icon: 'ticket', color: '#10B981', label: 'Entrada' },
+  } as const;
+
+  const category = categoryMap[product.category as keyof typeof categoryMap] || { icon: 'cube', color: '#6B7280', label: 'Otro' };
+
+  return (
+    <Animated.View style={[styles.cardWrapper, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
+      <LinearGradient colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']} style={styles.cardGradient}>
+        <View style={styles.cardRow}>
+          <View style={styles.imageContainer}>
+            {product.imageUrl ? (
+              <Image source={{ uri: product.imageUrl }} style={styles.image} resizeMode="cover" />
+            ) : (
+              <View style={styles.placeholder}>
+                <Ionicons name={category.icon as any} size={32} color={category.color} />
+              </View>
+            )}
+          </View>
+
+          <View style={styles.infoContainer}>
+            <View style={styles.headerRow}>
+              <View style={[styles.badge, { backgroundColor: category.color }]}>
+                <Ionicons name={category.icon as any} size={10} color="#fff" />
+                <Text style={styles.badgeText}>{category.label}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+            <Text style={styles.productPrice}>${product.price.toLocaleString()}</Text>
+
+            <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
+              <LinearGradient colors={[category.color, category.color + 'D0']} style={styles.addGradient}>
+                <Ionicons name="add" size={16} color="#fff" />
+                <Text style={styles.addText}>Agregar</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: isMobile ? 20 : isTablet ? 40 : 80,
-    paddingTop: isMobile ? 60 : 80,
+    paddingHorizontal: isMobile ? 16 : 40,
+    paddingTop: 60,
     paddingBottom: 100,
     alignItems: 'center',
+    width: '100%',
   },
 
+  // Header
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: isMobile ? 40 : 60,
     width: '100%',
+    marginBottom: 20,
+    maxWidth: 900,
   },
   logoGlow: {
-    padding: 16,
-    borderRadius: 80,
-    backgroundColor: 'rgba(170, 0, 255, 0.2)',
-    shadowColor: '#aa00ff',
-    shadowOpacity: 0.8,
-    shadowRadius: 30,
-    elevation: 30,
-    marginBottom: 20,
+    padding: 10,
+    borderRadius: 50,
+    backgroundColor: 'rgba(170, 0, 255, 0.1)',
   },
-  logo: { width: 140, height: 140 },
-  title: {
-    fontSize: isDesktop ? 72 : isTablet ? 60 : 52,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 8,
-    textShadowColor: '#ff00aa',
-    textShadowRadius: 20,
-  },
-  subtitle: {
-    fontSize: isDesktop ? 20 : 16,
-    color: '#e0aaff',
-    fontWeight: '700',
-    letterSpacing: 4,
-    marginTop: 8,
-  },
-
-  userButton: {
-    position: 'absolute',
-    top: 0,
-    right: isMobile ? 0 : 20,
-  },
+  logo: { width: 80, height: 40 },
+  userButton: {},
   avatar: {
-    width: isMobile ? 56 : 64,
-    height: isMobile ? 56 : 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
+    width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff'
   },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: '900' },
+  avatarText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   loginBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(170, 0, 255, 0.2)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: '#aa00ff',
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(170,0,255,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#aa00ff', gap: 6
   },
-  loginText: { color: '#e0aaff', fontWeight: '800', fontSize: 14 },
+  loginText: { color: '#e0aaff', fontWeight: '800', fontSize: 12 },
 
+  // Menu
   userMenu: {
-    position: 'absolute',
-    top: isMobile ? 80 : 90,
-    right: isMobile ? 16 : 20,
-    backgroundColor: 'rgba(15, 0, 40, 0.95)',
-    borderRadius: 24,
-    padding: 20,
-    width: 300,
-    borderWidth: 1,
-    borderColor: '#aa00ff',
-    shadowColor: '#aa00ff',
-    shadowRadius: 20,
-    elevation: 20,
-    zIndex: 1000,
+    position: 'absolute', top: 70, right: 20, backgroundColor: '#150030', borderRadius: 24, padding: 20, width: 280, borderWidth: 1, borderColor: '#aa00ff', zIndex: 1000, elevation: 20
   },
-  userMenuDesktop: {
-    top: 100,
-    right: 40,
-    width: 340,
-  },
-  menuHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
-  avatarSmall: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarTextSmall: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  menuName: { color: '#fff', fontSize: 20, fontWeight: '800' },
-  menuEmail: { color: '#aaa', fontSize: 14 },
-  roleBadge: { backgroundColor: '#333', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginTop: 6 },
+  userMenuDesktop: { top: 80, right: 40, width: 320 },
+  menuHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+  avatarSmall: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  avatarTextSmall: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  menuName: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  menuEmail: { color: '#aaa', fontSize: 12 },
+  roleBadge: { backgroundColor: '#333', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginTop: 4, alignSelf: 'flex-start' },
   adminBadge: { backgroundColor: '#aa00ff' },
-  roleText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
-  menuItemText: { color: '#ff3366', fontSize: 17, fontWeight: '700' },
+  roleText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  menuItemText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  menuDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 8 },
 
-  sectionTitle: {
-    fontSize: isDesktop ? 48 : isTablet ? 40 : 36,
-    fontWeight: '900',
-    color: '#ff00aa',
-    paddingVertical: 20,
-    marginVertical: 40,
-    textShadowColor: '#ff00aa',
-    textShadowRadius: 15,
-    letterSpacing: 3,
-  },
+  // Quick Access
+  quickAccessContainer: { width: '100%', maxWidth: 900, flexDirection: 'row', gap: 12, marginBottom: 30, justifyContent: 'center' },
+  quickAccessButton: { flex: 1, borderRadius: 16, overflow: 'hidden', maxWidth: 200, elevation: 4 },
+  quickAccessGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, gap: 10 },
+  quickAccessText: { fontSize: 14, fontWeight: '800', color: '#003322', letterSpacing: 0.5 },
 
-  guestGrid: {
-    width: '100%',
-    gap: 30,
-    alignItems: 'center',
-  },
-  guestGridTablet: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 900 },
-  guestGridDesktop: { maxWidth: 1200, gap: 40 },
+  // Filters
+  filterSection: { width: '100%', maxWidth: 900, marginBottom: 20 },
+  sectionTitle: { fontSize: 24, fontWeight: '900', color: '#fff', marginBottom: 16, letterSpacing: 2, textAlign: 'center' },
+  filterContainer: { flexDirection: 'row', justifyContent: 'center', gap: 10, flexWrap: 'wrap' },
+  filterButton: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#333' },
+  filterGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 6 },
+  filterText: { fontSize: 14, fontWeight: '700' },
 
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: isDesktop ? 30 : 20,
-    width: '100%',
-    maxWidth: isDesktop ? 1100 : 800,
-    marginBottom: 50,
-  },
-  gridDesktop: { gap: 40 },
+  // Grid
+  grid: { width: '100%', maxWidth: 600, gap: 16 },
+  gridDesktop: { maxWidth: 900, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  empty: { padding: 40, alignItems: 'center' },
+  emptyText: { color: '#888', fontStyle: 'italic' },
 
-  neonCard: {
-    width: '100%',
-    aspectRatio: 1,
-    maxWidth: 380,
-    borderRadius: 32,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+  // Product Card
+  cardWrapper: {
+    width: isDesktop ? '30%' : '100%',
+    borderRadius: 20, overflow: 'hidden', elevation: 4, backgroundColor: '#000'
   },
-  neonCardSmall: {
-    width: isDesktop ? 220 : isTablet ? 180 : 160,
-    height: isDesktop ? 220 : isTablet ? 180 : 160,
-  },
-  glowEffect: {
-    ...StyleSheet.absoluteFillObject,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 30,
-    elevation: 20,
-  },
-  cardLabel: {
-    fontSize: isMobile ? 22 : 26,
-    fontWeight: '900',
-    marginTop: 20,
-    textAlign: 'center',
-    textShadowColor: 'currentColor',
-    textShadowRadius: 10,
-  },
+  cardGradient: { padding: 1 },
+  cardRow: { backgroundColor: '#1A1A2E', borderRadius: 19, flexDirection: 'row', padding: 12, alignItems: 'center' },
+  imageContainer: { width: 80, height: 80, borderRadius: 16, overflow: 'hidden', backgroundColor: '#2A2A3E', marginRight: 16 },
+  image: { width: '100%', height: '100%' },
+  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  infoContainer: { flex: 1 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, gap: 4, alignSelf: 'flex-start' },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  productName: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  productPrice: { color: '#aa00ff', fontSize: 18, fontWeight: '900', marginBottom: 6 },
+  addButton: { alignSelf: 'flex-start', borderRadius: 12, overflow: 'hidden' },
+  addGradient: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, gap: 4 },
+  addText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
-  footer: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingVertical: 40,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-    width: '100%',
-  },
-  footerText: {
-    fontSize: 16,
-    color: '#888',
-    fontWeight: '600',
-    letterSpacing: 2,
-  },
-  footerSub: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-  },
+  // FAB
+  fab: { position: 'absolute', bottom: 30, right: 20, elevation: 10, shadowColor: '#aa00ff', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10 },
+  fabGradient: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
+  fabBadge: { position: 'absolute', top: -5, right: -5, backgroundColor: '#ff0000', width: 22, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#150030' },
+  fabBadgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
 
-  // MODAL
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.97)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#150030',
-    padding: 40,
-    borderRadius: 40,
-    width: '90%',
-    maxWidth: 460,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#aa00ff',
-    shadowColor: '#aa00ff',
-    shadowRadius: 30,
-    elevation: 30,
-  },
-  modalTitle: {
-    fontSize: 44,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 4,
-  },
-  modalSubtitle: {
-    fontSize: 18,
-    color: '#e0aaff',
-    marginBottom: 30,
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    color: '#fff',
-    width: '100%',
-    padding: 18,
-    borderRadius: 20,
-    marginVertical: 10,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#aa00ff44',
-  },
-  primaryBtn: {
-    backgroundColor: '#aa00ff',
-    width: '100%',
-    padding: 18,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginVertical: 20,
-  },
-  line: { flex: 1, height: 1, backgroundColor: '#aa00ff44' },
-  dividerText: { color: '#888', paddingHorizontal: 20, fontSize: 14 },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4285f4',
-    width: '100%',
-    padding: 16,
-    borderRadius: 20,
-    justifyContent: 'center',
-    gap: 12,
-    marginVertical: 10,
-  },
-  googleText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  cancelText: { color: '#888', marginTop: 20, fontSize: 16 },
-  registerText: {
-    color: '#ff00aa',
-    marginTop: 20,
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
+  // Footer
+  footer: { marginTop: 40, paddingBottom: 20, alignItems: 'center' },
+  footerText: { color: '#666', fontSize: 12, letterSpacing: 1, alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
 });

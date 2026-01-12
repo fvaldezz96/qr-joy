@@ -51,11 +51,11 @@ export const loginThunk = createAsyncThunk(
       return payload;
     } catch (directError) {
       console.warn('[Auth] Login directo falló, intentando con Sistema A:', directError);
-      
+
       // Fallback: delegar login a Sistema A
       try {
         const delegatedResponse = await api.loginToSystemA(cleanEmail, cleanPass);
-        
+
         if (delegatedResponse.success) {
           const payload = {
             token: delegatedResponse.token,
@@ -119,7 +119,7 @@ export const loginWithGoogleThunk = createAsyncThunk(
   },
 );
 
-// ✅ Registro de usuario (rol user por defecto en el backend)
+// ✅ Registro de usuario (Centralizado en Sistema A)
 export const registerThunk = createAsyncThunk(
   'auth/register',
   async (body: { name: string; email: string; password: string; cel: string }) => {
@@ -128,18 +128,32 @@ export const registerThunk = createAsyncThunk(
     const cleanName = sanitize(body.name);
     const celNumber = Number(String(body.cel).replace(/\D/g, ''));
 
-    const { data } = await api.post('/auth/register', {
+    // IMPORTANTE: Registrar directamente en Sistema A
+    // El sistema A requiere: email, password, name, userType y cel
+    await api.registerToSystemA({
       email: cleanEmail,
       password: cleanPass,
       name: cleanName,
+      surname: '', // Opcional, enviamos vacío
+      userType: 'comprador',
       cel: celNumber,
     });
 
-    const payload = data.data as { token: string; user: User };
+    // Como el endpoint de registro no devuelve token, hacemos login inmediato
+    const loginResponse = await api.loginToSystemA(cleanEmail, cleanPass);
 
-    await saveToken(payload.token);
-    setAuthToken(payload.token);
-    return payload;
+    if (loginResponse.success) {
+      const payload = {
+        token: loginResponse.token,
+        user: loginResponse.user,
+      };
+
+      await saveToken(payload.token);
+      setAuthToken(payload.token);
+      return payload;
+    } else {
+      throw new Error('Registro exitoso en Sistema A, pero falló el auto-login');
+    }
   },
 );
 
