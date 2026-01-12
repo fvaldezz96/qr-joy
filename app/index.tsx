@@ -160,7 +160,7 @@ export default function Home() {
           </Animated.View>
         )}
 
-        {/* === ACCESOS RÁPIDOS === */}
+        {/* ===  ACCESOS RÁPIDOS  === */}
         {user && (
           <View style={styles.quickAccessContainer}>
             <Link href="/(user)/my-qr" asChild>
