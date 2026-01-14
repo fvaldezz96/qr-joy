@@ -147,7 +147,7 @@ class QRHybridWebSocketService {
         resolve();
       });
 
-      this.socket.on('connect_error', (error) => {
+      this.socket.on('connect_error', (error: Error) => {
         console.error('❌ Error de conexión QR WebSocket:', error);
         this.connectionStatus = QRConnectionStatus.ERROR;
         this.emit('connection:changed', this.connectionStatus);
@@ -155,12 +155,12 @@ class QRHybridWebSocketService {
         reject(error);
       });
 
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on('disconnect', (reason: string) => {
         console.log(`❌ QR WebSocket desconectado: ${reason}`);
         this.connectionStatus = QRConnectionStatus.DISCONNECTED;
         this.stopHeartbeat();
         this.emit('connection:changed', this.connectionStatus);
-        
+
         if (reason === 'io server disconnect') {
           // El servidor desconectó intencionalmente, reconectar manualmente
           this.connect(userId);
