@@ -72,6 +72,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
+    "@types/estree": "^1.0.8",
     "@types/react": "~18.2.45",
     "@types/socket.io-client": "^1.4.36",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
