@@ -6,13 +6,8 @@ Configure estas variables en el Railway Dashboard para el servicio `qr-front`:
 
 ```bash
 # API Configuration
-EXPO_PUBLIC_API_BASE_URL=https://your-qr-api.railway.app
-EXPO_PUBLIC_SYSTEM_A_API_URL=https://your-product-api.railway.app
-
-# Keycloak Authentication
-EXPO_PUBLIC_KEYCLOAK_ISSUER=https://your-keycloak.com/realms/your-realm
-EXPO_PUBLIC_KEYCLOAK_CLIENT_ID=your-client-id
-EXPO_PUBLIC_KEYCLOAK_TOKEN_URL=https://your-keycloak.com/realms/your-realm/protocol/openid-connect/token
+EXPO_PUBLIC_API_BASE_URL=https://qrjoy-api-production.up.railway.app
+EXPO_PUBLIC_SYSTEM_A_API_URL=https://product-api-production-b9c7.up.railway.app
 
 # Node Configuration
 NODE_ENV=production
