@@ -11,7 +11,9 @@
     "web": "expo start --web",
     "lint": "npx expo lint",
     "lint:fix": "npx expo lint --fix",
-    "build": "tsc && expo export --platform web"
+    "build": "tsc && npm run build:web",
+    "build:web": "npx expo export -p web",
+    "start:prod": "npx serve dist -s -l tcp://0.0.0.0:$PORT --no-port-switching"
   },
   "expo": {
     "install": {
