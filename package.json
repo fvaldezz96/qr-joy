@@ -16,7 +16,7 @@
     "lint:fix": "npx expo lint --fix",
     "build": "tsc && npm run build:web",
     "build:web": "npx expo export -p web",
-    "start:prod": "node server.js"
+    "start:prod": "node server.cjs"
   },
   "expo": {
     "install": {
